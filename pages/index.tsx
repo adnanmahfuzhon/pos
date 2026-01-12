@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import {
   TrendingUp,
   TrendingDown,
@@ -244,7 +244,7 @@ export default function Dashboard() {
                 </div>
                 <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Log Aktivitas Terbaru</h3>
               </div>
-              <Link to="/incomes" className="text-[10px] font-black text-orange-500 uppercase tracking-widest hover:underline">Lihat Semua History</Link>
+              <Link href="/incomes" className="text-[10px] font-black text-orange-500 uppercase tracking-widest hover:underline">Lihat Semua History</Link>
             </div>
 
             <div className="space-y-1">
@@ -293,13 +293,13 @@ export default function Dashboard() {
                         <p className="text-[9px] font-black text-orange-600 dark:text-orange-400 uppercase">{item.stock} / {item.minStock}</p>
                       </div>
                     </div>
-                    <Link to="/ingredients" className="p-3 bg-white dark:bg-slate-900 rounded-2xl text-orange-500 shadow-xl shadow-orange-500/10 hover:scale-110 transition-transform"><ArrowRight className="w-4 h-4" /></Link>
+                    <Link href="/ingredients" className="p-3 bg-white dark:bg-slate-900 rounded-2xl text-orange-500 shadow-xl shadow-orange-500/10 hover:scale-110 transition-transform"><ArrowRight className="w-4 h-4" /></Link>
                   </div>
                 ))}
               </div>
             )}
             <div className="mt-10 pt-8 border-t border-slate-50 dark:border-slate-800">
-              <Link to="/ingredients" className="w-full py-5 bg-slate-950 dark:bg-orange-500 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-[2rem] flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl shadow-orange-500/10">
+              <Link href="/ingredients" className="w-full py-5 bg-slate-950 dark:bg-orange-500 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-[2rem] flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl shadow-orange-500/10">
                 Laporan Stok
                 <ArrowRight className="w-4 h-4" />
               </Link>
