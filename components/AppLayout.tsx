@@ -24,11 +24,11 @@ const Sidebar = ({ isOpen, toggle, theme, toggleTheme }: {
 
     const navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-        { icon: ShoppingCart, label: 'Kasir (POS)', path: '/pos' },
-        { icon: Coffee, label: 'Daftar Menu', path: '/products' },
-        { icon: Milk, label: 'Gudang Bahan', path: '/ingredients' },
-        { icon: TrendingUp, label: 'Pemasukan', path: '/incomes' },
-        { icon: Receipt, label: 'Pengeluaran', path: '/expenses' },
+        { icon: ShoppingCart, label: 'Kasir (POS)', path: '/POS' },
+        { icon: Coffee, label: 'Daftar Menu', path: '/Products' },
+        { icon: Milk, label: 'Gudang Bahan', path: '/Ingredients' },
+        { icon: TrendingUp, label: 'Pemasukan', path: '/Incomes' },
+        { icon: Receipt, label: 'Pengeluaran', path: '/Expenses' },
     ];
 
     return (
