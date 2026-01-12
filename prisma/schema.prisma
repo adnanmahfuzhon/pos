@@ -1,0 +1,85 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Ingredient {
+  id           String   @id @default(uuid())
+  code         String
+  name         String
+  type         String
+  unit         String
+  pricePerUnit Float
+  stock        Float
+  minStock     Float
+  
+  // Relations
+  products     ProductIngredient[]
+  // priceHistory PriceRecord[] // Not implementing history for now to keep simple
+}
+
+model Product {
+  id            String   @id @default(uuid())
+  name          String
+  price         Float
+  channelPrices String   @default("{}") // Storing as JSON string
+  category      String
+  isActive      Boolean
+  imageUrl      String?
+
+  ingredients   ProductIngredient[]
+}
+
+model ProductIngredient {
+  id           String     @id @default(uuid())
+  productId    String
+  ingredientId String
+  quantity     Float
+
+  product      Product    @relation(fields: [productId], references: [id])
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+}
+
+model Sale {
+  id            String   @id @default(uuid())
+  timestamp     Float    // Keeping as number/timestamp to match frontend
+  totalAmount   Float
+  totalHPP      Float
+  paymentMethod String
+  channel       String
+  
+  details       SaleDetail[]
+}
+
+model SaleDetail {
+  id          String @id @default(uuid())
+  saleId      String
+  productId   String
+  quantity    Float
+  priceAtSale Float
+  hppAtSale   Float
+
+  sale        Sale   @relation(fields: [saleId], references: [id])
+}
+
+model Expense {
+  id                 String  @id @default(uuid())
+  timestamp          Float
+  category           String
+  itemName           String
+  amount             Float
+  linkedIngredientId String?
+  quantity           Float?
+}
+
+model Income {
+  id         String @id @default(uuid())
+  timestamp  Float
+  category   String
+  sourceName String
+  amount     Float
+}

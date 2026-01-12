@@ -1,0 +1,7 @@
+{
+  "name": "FlavorPOS - Smart Culinary POS",
+  "description": "A comprehensive Point of Sale system with automatic stock integration, ingredient-based costing (HPP), and real-time dashboard analytics for culinary businesses.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
