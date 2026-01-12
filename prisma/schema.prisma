@@ -16,17 +16,18 @@ model Ingredient {
   pricePerUnit Float
   stock        Float
   minStock     Float
+  recipe       Json?
+  priceHistory Json?
   
   // Relations
   products     ProductIngredient[]
-  // priceHistory PriceRecord[] // Not implementing history for now to keep simple
 }
 
 model Product {
   id            String   @id @default(uuid())
   name          String
   price         Float
-  channelPrices String   @default("{}") // Storing as JSON string
+  channelPrices Json     @default("{}")
   category      String
   isActive      Boolean
   imageUrl      String?
