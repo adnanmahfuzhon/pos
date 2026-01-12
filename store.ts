@@ -1,7 +1,7 @@
 
 import { Ingredient, Product, Sale, Expense, Income } from './types';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 const fetchJson = async (url: string, options?: RequestInit) => {
   const res = await fetch(url, options);
