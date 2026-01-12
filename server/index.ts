@@ -12,7 +12,12 @@ import incomesRouter from '../pages/api/incomes';
 const app = express();
 const PORT = 3001;
 
-app.use(cors());
+app.use(cors({
+    origin: true, // Mengizinkan semua origin (bagus untuk dev local/network)
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Mount routers
