@@ -15,7 +15,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     id,
                     ...data,
                     ingredients: {
-                        create: ingredients // { ingredientId, quantity }
+                        create: (ingredients || []).map((ing: any) => ({
+                            ingredientId: ing.ingredientId,
+                            quantity: ing.quantity
+                        }))
                     }
                 }
             });
