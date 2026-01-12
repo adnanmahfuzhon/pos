@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'PUT') {
         try {
-            const { priceHistory, recipe, ...data } = req.body;
+            const { id: _, ...data } = req.body;
             const ingredient = await prisma.ingredient.update({
                 where: { id: idStr },
                 data: data

@@ -19,7 +19,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     where: { id: idStr },
                     data: {
                         ...data,
-                        channelPrices: JSON.stringify(channelPrices || {}),
                         ingredients: {
                             create: ingredients
                         }

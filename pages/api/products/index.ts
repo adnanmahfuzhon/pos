@@ -6,19 +6,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const products = await prisma.product.findMany({
             include: { ingredients: true }
         });
-        const parsedProducts = products.map(p => ({
-            ...p,
-            channelPrices: p.channelPrices ? JSON.parse(p.channelPrices) : {}
-        }));
-        return res.status(200).json(parsedProducts);
+        return res.status(200).json(products);
     } else if (req.method === 'POST') {
         try {
-            const { id, ingredients, channelPrices, ...data } = req.body;
+            const { id, ingredients, ...data } = req.body;
             const product = await prisma.product.create({
                 data: {
                     id,
                     ...data,
-                    channelPrices: JSON.stringify(channelPrices || {}),
                     ingredients: {
                         create: ingredients // { ingredientId, quantity }
                     }
