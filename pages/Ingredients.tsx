@@ -57,6 +57,7 @@ export default function Ingredients() {
   const [recipe, setRecipe] = useState<ProductIngredient[]>([]);
   const [showIngDropdown, setShowIngDropdown] = useState(false);
   const [isAutoCalc, setIsAutoCalc] = useState(true);
+  const [batchHelper, setBatchHelper] = useState<{ id: string, rawQty: number, yieldQty: number } | null>(null);
 
   useEffect(() => {
     getIngredients().then(setIngredients).catch(console.error);
@@ -840,6 +841,50 @@ export default function Ingredients() {
                                     {sameUnit && <span className="text-[7px] bg-orange-500 text-white px-1 py-0.5 rounded font-black">SINKRON</span>}
                                   </div>
                                   <p className="text-[8px] font-bold text-slate-400 uppercase mt-0.5">Biaya: {formatCurrency(ing?.pricePerUnit || 0)}/{ing?.unit}</p>
+
+                                  {/* BATCH CALCULATOR TOOL */}
+                                  {batchHelper?.id === r.ingredientId ? (
+                                    <div className="mt-3 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl space-y-3 animate-in fade-in duration-300">
+                                      <p className="text-[8px] font-black uppercase text-orange-600">Kalkulator Batch (Misal: 1kg ayam = 90pcs)</p>
+                                      <div className="flex items-center gap-3">
+                                        <div className="flex-1">
+                                          <input
+                                            type="number"
+                                            placeholder="Stok Mentah"
+                                            className="w-full bg-white dark:bg-slate-900 border border-orange-200 rounded-lg px-2 py-1 text-[10px] font-black"
+                                            onChange={(e) => setBatchHelper({ ...batchHelper, rawQty: Number(e.target.value) })}
+                                          />
+                                        </div>
+                                        <span className="text-orange-400 font-bold">/</span>
+                                        <div className="flex-1">
+                                          <input
+                                            type="number"
+                                            placeholder="Hasil Pcs"
+                                            className="w-full bg-white dark:bg-slate-900 border border-orange-200 rounded-lg px-2 py-1 text-[10px] font-black"
+                                            onChange={(e) => setBatchHelper({ ...batchHelper, yieldQty: Number(e.target.value) })}
+                                          />
+                                        </div>
+                                        <button
+                                          onClick={() => {
+                                            if (batchHelper.yieldQty > 0) {
+                                              updateRecipeQty(r.ingredientId, batchHelper.rawQty / batchHelper.yieldQty);
+                                            }
+                                            setBatchHelper(null);
+                                          }}
+                                          className="bg-orange-500 text-white p-2 rounded-lg"
+                                        >
+                                          <CheckCircle2 className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => setBatchHelper({ id: r.ingredientId, rawQty: 0, yieldQty: 0 })}
+                                      className="mt-2 text-[8px] font-black uppercase text-orange-500 flex items-center gap-1 hover:opacity-70"
+                                    >
+                                      <Calculator className="w-3 h-3" /> Hitung Batch / Hasil
+                                    </button>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-3">
                                   <input type="number" value={r.quantity} onChange={e => updateRecipeQty(r.ingredientId, Number(e.target.value))} className="w-20 px-2 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 rounded-lg font-black text-center text-[11px]" />
