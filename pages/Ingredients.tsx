@@ -33,6 +33,7 @@ export default function Ingredients() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScanOpen, setIsScanOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isProductionOpen, setIsProductionOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
   const [selectedIngForDetail, setSelectedIngForDetail] = useState<Ingredient | null>(null);
 
@@ -190,6 +191,7 @@ export default function Ingredients() {
       setTimeout(() => {
         setScanResult(null);
         setIsScanOpen(false);
+        setIsProductionOpen(false);
       }, 1500);
     } catch (e: any) {
       console.error(e);
@@ -250,6 +252,13 @@ export default function Ingredients() {
           >
             <Plus className="w-4 h-4" />
             Bahan Baru
+          </button>
+          <button
+            onClick={() => { setIsProductionOpen(true); setSelectedIngId(''); setScanQty(0); }}
+            className="bg-slate-950 dark:bg-slate-800 text-white px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest flex items-center gap-3 border border-slate-800 hover:bg-black transition-all shadow-xl active:scale-95"
+          >
+            <Calculator className="w-4 h-4 text-orange-500" />
+            Input Produksi
           </button>
         </div>
       </div>
@@ -511,6 +520,119 @@ export default function Ingredients() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED PRODUCTION MODAL */}
+      {isProductionOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300 border border-slate-200 dark:border-slate-800">
+            <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-orange-500 rounded-2xl text-white shadow-lg shadow-orange-500/20">
+                  <Calculator className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Entry Produksi</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Konversi Bahan Mentah ke Olahan</p>
+                </div>
+              </div>
+              <button onClick={() => setIsProductionOpen(false)} className="p-4 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-500 rounded-2xl transition-all">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Pilih Bahan Olahan/Mix</label>
+                  <select
+                    value={selectedIngId}
+                    onChange={e => { setSelectedIngId(e.target.value); setScanQty(0); }}
+                    className="w-full px-8 py-5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl outline-none font-black text-lg text-slate-900 dark:text-white appearance-none transition-all focus:ring-4 focus:ring-orange-500/10"
+                  >
+                    <option value="">-- PILIH BAHAN --</option>
+                    {ingredients.filter(i => i.type === 'Processed' || i.type === 'Mix').map(ing => (
+                      <option key={ing.id} value={ing.id}>{ing.name.toUpperCase()} ({ing.unit})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedIngId && (
+                  <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-center">Jumlah Produksi Baru</label>
+                      <div className="flex items-center justify-center gap-8 bg-slate-50 dark:bg-slate-800 p-6 rounded-[2.5rem] border border-slate-200 dark:border-slate-700">
+                        <button onClick={() => setScanQty(Math.max(0, scanQty - 1))} className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-red-500 transition-all shadow-sm active:scale-90"><Minus className="w-6 h-6" /></button>
+                        <div className="flex flex-col items-center">
+                          <input
+                            type="number"
+                            value={scanQty}
+                            onChange={e => setScanQty(Number(e.target.value))}
+                            className="bg-transparent w-32 text-center font-black text-5xl text-slate-900 dark:text-white outline-none"
+                          />
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{ingredients.find(i => i.id === selectedIngId)?.unit}</span>
+                        </div>
+                        <button onClick={() => setScanQty(scanQty + 1)} className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-orange-500 transition-all shadow-sm active:scale-90"><Plus className="w-6 h-6" /></button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        Pratinjau Pengurangan Bahan Mentah
+                      </h3>
+                      <div className="bg-slate-950 rounded-[2.5rem] p-8 border border-slate-800 space-y-4 shadow-inner">
+                        {(() => {
+                          const target = ingredients.find(i => i.id === selectedIngId);
+                          if (!target?.recipe || !Array.isArray(target.recipe)) return (
+                            <p className="text-[10px] text-slate-500 font-bold uppercase italic text-center py-4">Resep belum diatur untuk bahan ini.</p>
+                          );
+
+                          return target.recipe.map((r: any) => {
+                            const raw = ingredients.find(i => i.id === r.ingredientId);
+                            const needed = r.quantity * scanQty;
+                            const isEnough = (raw?.stock || 0) >= needed;
+
+                            return (
+                              <div key={r.ingredientId} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+                                <div>
+                                  <p className="text-white font-black text-xs uppercase">{raw?.name || 'Unknown'}</p>
+                                  <p className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">Tersedia: {raw?.stock || 0} {raw?.unit}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className={`text-xs font-black ${isEnough ? 'text-green-400' : 'text-red-500'}`}>
+                                    -{needed} <span className="text-[9px] uppercase">{raw?.unit}</span>
+                                  </p>
+                                  {!isEnough && <p className="text-[8px] font-black text-red-500 uppercase mt-0.5">STOK KURANG!</p>}
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-10 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+              <button
+                onClick={handleQuickStockUpdate}
+                disabled={!selectedIngId || scanQty <= 0 || (() => {
+                  const target = ingredients.find(i => i.id === selectedIngId);
+                  if (!target?.recipe || !Array.isArray(target.recipe)) return true;
+                  return target.recipe.some((r: any) => {
+                    const raw = ingredients.find(i => i.id === r.ingredientId);
+                    return (raw?.stock || 0) < (r.quantity * scanQty);
+                  });
+                })()}
+                className="w-full py-7 bg-orange-500 text-white rounded-[2.5rem] font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:bg-orange-600 transition-all disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed flex items-center justify-center gap-4 active:scale-95 shadow-orange-500/30"
+              >
+                <Save className="w-6 h-6" /> Konfirmasi & Proses Produksi
+              </button>
             </div>
           </div>
         </div>
