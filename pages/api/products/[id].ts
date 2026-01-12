@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'PUT') {
         try {
-            const { ingredients, channelPrices, ...data } = req.body;
+            const { ingredients, ...data } = req.body;
 
             const product = await prisma.$transaction(async (tx) => {
                 // Delete existing ingredients relations
@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     data: {
                         ...data,
                         ingredients: {
-                            create: ingredients
+                            create: ingredients || []
                         }
                     },
                     include: { ingredients: true }
