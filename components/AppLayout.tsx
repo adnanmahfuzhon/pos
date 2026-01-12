@@ -134,7 +134,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <header className={`sticky top-0 z-30 flex items-center justify-between px-6 py-4 backdrop-blur-md border-b lg:hidden
           ${theme === 'dark' ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-gray-100'}`}>
                     <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 hover:opacity-70 text-current">
-                        <Menu className="w-6 h-6" /> // Error: Menu might not be imported? It is in imports.
+                        <Menu className="w-6 h-6" />
                     </button>
                     <div className="flex items-center gap-2">
                         <ShoppingCart className="w-5 h-5 text-orange-500" />
