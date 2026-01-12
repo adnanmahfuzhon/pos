@@ -33,6 +33,14 @@ export const deleteIngredient = async (id: string): Promise<void> => {
   return fetchJson(`${API_URL}/ingredients/${id}`, { method: 'DELETE' });
 };
 
+export const produceIngredient = async (ingredientId: string, quantity: number): Promise<Ingredient> => {
+  return fetchJson(`${API_URL}/ingredients/produce`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ingredientId, quantity })
+  });
+};
+
 // Compatibility shim for old "saveIngredients" (bulk save)
 // Warning: This implementation loops and creates/updates, which is slow.
 // We should refactor the app to use atomic updates.

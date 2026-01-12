@@ -18,7 +18,7 @@ import {
   AreaChart,
   Area
 } from 'recharts';
-import { getIngredients, createIngredient, updateIngredient, deleteIngredient } from '../store';
+import { getIngredients, createIngredient, updateIngredient, deleteIngredient, produceIngredient } from '../store';
 import { Ingredient, IngredientType, ProductIngredient } from '../types';
 
 declare global {
@@ -172,41 +172,16 @@ export default function Ingredients() {
     const targetIng = ingredients.find(i => i.id === selectedIngId);
     if (!targetIng || scanQty <= 0) return;
 
-    // Logic currently updates stock of target, and decrements stock of raw materials if processed.
-    // This logic is complex to move to backend unless backend handles "Produce" action.
-    // For now, I will perform multiple updates from frontend.
-    // Optimally, we should have an API endpoint /api/production that takes productId and qty.
-    // But to stick to CRUD refactor, I'll just call updateIngredient multiple times.
-
     try {
-      // 1. Update recipe ingredients stock (decrement)
-      if ((targetIng.type === 'Processed' || targetIng.type === 'Mix') && targetIng.recipe) {
-        for (const r of targetIng.recipe) {
-          const rawIng = ingredients.find(i => i.id === r.ingredientId);
-          if (!rawIng || rawIng.stock < (r.quantity * scanQty)) {
-            alert(`Stok "${rawIng?.name || 'Bahan'}" tidak cukup.`);
-            return;
-          }
-        }
-
-        // Decrement logic
-        for (const r of targetIng.recipe) {
-          const rawIng = ingredients.find(i => i.id === r.ingredientId);
-          if (rawIng) {
-            const newStock = rawIng.stock - (r.quantity * scanQty);
-            await updateIngredient(rawIng.id, { stock: newStock });
-            // Update local state temporarily/optimistically or just rely on refetch
-            // I'll accept simpler UI experience: refetch all at end or update local array carefully.
-          }
-        }
+      if (targetIng.type === 'Processed' || targetIng.type === 'Mix') {
+        // Use atomic production API
+        await produceIngredient(targetIng.id, scanQty);
+      } else {
+        // Regular stock increment
+        const newStock = targetIng.stock + scanQty;
+        await updateIngredient(targetIng.id, { stock: newStock });
       }
 
-      // 2. Update target stock (increment)
-      const newTargetStock = targetIng.stock + scanQty;
-      await updateIngredient(targetIng.id, { stock: newTargetStock });
-
-      // Refetch all to be sure
-      // Or manually update local state
       const refreshed = await getIngredients();
       setIngredients(refreshed);
 
@@ -216,9 +191,9 @@ export default function Ingredients() {
         setScanResult(null);
         setIsScanOpen(false);
       }, 1500);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Gagal update stok");
+      alert(e.message || "Gagal update stok");
     }
   };
 
@@ -478,11 +453,45 @@ export default function Ingredients() {
 
               {/* Composition Preview if Processed/Mix */}
               {(selectedIngForDetail.type === 'Processed' || selectedIngForDetail.type === 'Mix') && selectedIngForDetail.recipe && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3">
-                    <Calculator className="w-5 h-5 text-slate-400" />
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Komposisi Bahan Pembentuk</h3>
+                <div className="space-y-8 pt-6 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-center gap-3">
+                      <Calculator className="w-5 h-5 text-slate-400" />
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Komposisi Bahan & Produksi</h3>
+                    </div>
+
+                    <div className="flex items-center gap-4 bg-orange-50 dark:bg-orange-500/10 p-3 rounded-2xl border border-orange-100 dark:border-orange-500/20">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={scanQty}
+                          onChange={e => setScanQty(Number(e.target.value))}
+                          placeholder="Qty..."
+                          className="w-20 bg-white dark:bg-slate-900 border border-orange-200 dark:border-orange-500/30 rounded-xl px-3 py-2 font-black text-xs text-center outline-none"
+                        />
+                        <span className="text-[10px] font-black text-orange-600 uppercase">{selectedIngForDetail.unit}</span>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          if (scanQty <= 0) return;
+                          try {
+                            await produceIngredient(selectedIngForDetail.id, scanQty);
+                            const refreshed = await getIngredients();
+                            setIngredients(refreshed);
+                            setSelectedIngForDetail(refreshed.find(i => i.id === selectedIngForDetail.id) || null);
+                            setScanQty(0);
+                            alert("Produksi Berhasil!");
+                          } catch (e: any) {
+                            alert(e.message || "Gagal memproses produksi");
+                          }
+                        }}
+                        className="bg-orange-500 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all active:scale-95 shadow-lg shadow-orange-500/20"
+                      >
+                        PROSES PRODUKSI
+                      </button>
+                    </div>
                   </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {selectedIngForDetail.recipe.map(r => {
                       const componentIng = ingredients.find(i => i.id === r.ingredientId);
@@ -490,7 +499,7 @@ export default function Ingredients() {
                         <div key={r.ingredientId} className="p-5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-between">
                           <div>
                             <p className="text-[11px] font-black uppercase text-slate-900 dark:text-white">{componentIng?.name}</p>
-                            <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">HPP: {formatCurrency(componentIng?.pricePerUnit || 0)} / {componentIng?.unit}</p>
+                            <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Stok: {componentIng?.stock} {componentIng?.unit} | HPP: {formatCurrency(componentIng?.pricePerUnit || 0)} / {componentIng?.unit}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-xs font-black text-orange-500">{r.quantity} <span className="text-[9px] uppercase">{componentIng?.unit}</span></p>
