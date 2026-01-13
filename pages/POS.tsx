@@ -229,7 +229,7 @@ export default function POS() {
         )}
 
         {/* Product Grid View */}
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-24">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-6 pb-24">
           {filteredProducts.map(product => {
             const isOut = product.ingredients.some(pi => {
               const ing = ingredients.find(i => i.id === pi.ingredientId);
@@ -252,44 +252,44 @@ export default function POS() {
                     <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Coffee className="w-12 h-12 text-slate-200 dark:text-slate-700 group-hover:text-orange-500/20 transition-colors" />
+                      <Coffee className="w-8 h-8 md:w-12 md:h-12 text-slate-200 dark:text-slate-700 group-hover:text-orange-500/20 transition-colors" />
                     </div>
                   )}
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-full text-[8px] font-black text-slate-900 dark:text-white uppercase tracking-widest border border-white/20 dark:border-slate-800">
+                  <div className="absolute top-2 left-2 md:top-4 md:left-4">
+                    <span className="px-2 py-0.5 md:px-3 md:py-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-full text-[7px] md:text-[8px] font-black text-slate-900 dark:text-white uppercase tracking-widest border border-white/20 dark:border-slate-800">
                       {product.category}
                     </span>
                   </div>
                   {isOut && (
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-white">
-                      <PackageX className="w-8 h-8 mb-2 opacity-80" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Stok Habis</span>
+                      <PackageX className="w-6 h-6 md:w-8 md:h-8 mb-1 md:mb-2 opacity-80" />
+                      <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Stok Habis</span>
                     </div>
                   )}
                 </div>
 
-                <div className="p-5 flex flex-col flex-1 gap-4">
+                <div className="p-3 md:p-5 flex flex-col flex-1 gap-2 md:gap-4">
                   <div className="flex-1">
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight leading-snug line-clamp-2">
+                    <h3 className="text-[11px] md:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight leading-snug line-clamp-2">
                       {product.name}
                     </h3>
                   </div>
                   <div className="flex items-center justify-between mt-auto">
                     <div>
-                      <p className="text-base font-black text-slate-900 dark:text-white tracking-tighter">
+                      <p className="text-xs md:text-base font-black text-slate-900 dark:text-white tracking-tighter">
                         {formatCurrency(currentPrice)}
                       </p>
                       {salesChannel !== 'Offline' && (
-                        <p className="text-[8px] font-bold text-slate-400 line-through">
+                        <p className="text-[7px] md:text-[8px] font-bold text-slate-400 line-through">
                           {formatCurrency(product.price)}
                         </p>
                       )}
                     </div>
                     <div className={`
-                      w-10 h-10 rounded-2xl flex items-center justify-center transition-all shadow-sm
+                      w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl flex items-center justify-center transition-all shadow-sm
                       ${isOut ? 'bg-slate-100 dark:bg-slate-800 text-slate-300' : 'bg-slate-50 dark:bg-slate-800 text-orange-500 group-hover:bg-orange-500 group-hover:text-white'}
                     `}>
-                      <Plus className="w-5 h-5" />
+                      <Plus className="w-4 h-4 md:w-5 md:h-5" />
                     </div>
                   </div>
                 </div>

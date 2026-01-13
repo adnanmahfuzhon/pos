@@ -14,13 +14,13 @@ import {
     Sun
 } from 'lucide-react';
 
-const Sidebar = ({ isOpen, toggle, theme, toggleTheme }: {
+const Sidebar = ({ isOpen, toggle, theme, toggleTheme, router }: {
     isOpen: boolean;
     toggle: () => void;
     theme: 'light' | 'dark';
     toggleTheme: () => void;
+    router: any;
 }) => {
-    const router = useRouter(); // Use Next.js router
 
     const navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -99,6 +99,7 @@ const Sidebar = ({ isOpen, toggle, theme, toggleTheme }: {
 };
 
 export default function AppLayout({ children }: { children: ReactNode }) {
+    const router = useRouter();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
@@ -128,7 +129,42 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 toggle={() => setIsSidebarOpen(!isSidebarOpen)}
                 theme={theme}
                 toggleTheme={toggleTheme}
+                router={router}
             />
+
+            {/* Bottom Navigation for Mobile */}
+            <nav className={`fixed bottom-0 left-0 right-0 z-[100] lg:hidden flex items-center justify-around p-3 border-t backdrop-blur-xl transition-all
+              ${theme === 'dark' ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-100'}`}>
+                {[
+                    { icon: LayoutDashboard, label: 'Dash', path: '/' },
+                    { icon: ShoppingCart, label: 'POS', path: '/POS' },
+                    { icon: Milk, label: 'Gudang', path: '/Ingredients' },
+                    { icon: TrendingUp, label: 'Income', path: '/Incomes' },
+                    { icon: Menu, label: 'Menu', onClick: () => setIsSidebarOpen(true) }
+                ].map((item, idx) => {
+                    const isActive = router.pathname === item.path;
+                    const Icon = item.icon;
+                    return (
+                        <div key={idx} className="flex flex-col items-center">
+                            {item.path ? (
+                                <Link
+                                    href={item.path}
+                                    className={`p-2.5 rounded-2xl transition-all ${isActive ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-slate-400'}`}
+                                >
+                                    <Icon className="w-5 h-5" />
+                                </Link>
+                            ) : (
+                                <button
+                                    onClick={item.onClick}
+                                    className="p-2.5 rounded-2xl text-slate-400"
+                                >
+                                    <Icon className="w-5 h-5" />
+                                </button>
+                            )}
+                        </div>
+                    );
+                })}
+            </nav>
 
             <main className="flex-1 lg:ml-64 flex flex-col min-h-screen">
                 <header className={`sticky top-0 z-30 flex items-center justify-between px-6 py-4 backdrop-blur-md border-b lg:hidden
@@ -143,7 +179,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     <div className="w-10"></div>
                 </header>
 
-                <div className="p-4 md:p-8 flex-1 overflow-x-hidden">
+                <div className="p-4 md:p-8 flex-1 overflow-x-hidden pb-24 lg:pb-8">
                     {children}
                 </div>
             </main>

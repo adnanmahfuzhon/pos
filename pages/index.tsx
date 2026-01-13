@@ -173,37 +173,37 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 md:gap-4">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Dashboard Audit</h1>
-          <p className="text-slate-500 font-bold text-xs uppercase tracking-[0.2em] mt-2 italic">Monitoring Laba & Sinkronisasi Database</p>
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Dashboard Audit</h1>
+          <p className="text-slate-500 font-bold text-[10px] md:text-xs uppercase tracking-[0.2em] mt-2 italic">Monitoring Laba & Sinkronisasi Database</p>
         </div>
 
         {/* Date Filter Bar */}
-        <div className="flex flex-wrap items-center gap-4 bg-white dark:bg-slate-900 p-3 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+        <div className="flex flex-col sm:flex-row items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm w-full lg:w-auto">
+          <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 w-full sm:w-auto">
             <Calendar className="w-4 h-4 text-orange-500" />
             <input
               type="date"
               value={startDate}
               onChange={e => setStartDate(e.target.value)}
-              className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none"
+              className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none w-full"
             />
           </div>
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">s/d</span>
-          <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+          <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 w-full sm:w-auto">
             <Calendar className="w-4 h-4 text-orange-500" />
             <input
               type="date"
               value={endDate}
               onChange={e => setEndDate(e.target.value)}
-              className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none"
+              className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none w-full"
             />
           </div>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard title="Pendapatan Periode" value={formatCurrency(totalRevenue)} icon={DollarSign} trend={`${startDate} - ${endDate}`} color="orange" />
         <StatCard title="Total HPP" value={formatCurrency(totalHPP)} icon={FileText} trend="Berdasarkan Produk Terjual" color="gray" />
         <StatCard title="Pengeluaran" value={formatCurrency(totalOpExpenses)} icon={TrendingDown} trend="Operasional & Bahan" color="red" />
@@ -213,14 +213,14 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white dark:bg-slate-900 p-10 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800">
-            <div className="flex items-center justify-between mb-10">
-              <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Distribusi Keuangan Periode</h3>
-              <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-500/10 rounded-xl text-[10px] font-black text-green-600 dark:text-green-400 uppercase border border-green-100 dark:border-green-500/20">
+          <div className="bg-white dark:bg-slate-900 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 md:mb-10">
+              <h3 className="text-lg md:text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Distribusi Keuangan</h3>
+              <div className="flex items-center self-start md:self-auto gap-2 px-4 py-2 bg-green-50 dark:bg-green-500/10 rounded-xl text-[10px] font-black text-green-600 dark:text-green-400 uppercase border border-green-100 dark:border-green-500/20">
                 <ShieldCheck className="w-4 h-4" /> Database Prisma
               </div>
             </div>
-            <div className="h-96 w-full">
+            <div className="h-64 md:h-96 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />

@@ -112,14 +112,14 @@ export default function Incomes() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 md:gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Pemasukan</h1>
           <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1 italic">Audit Periode & Rekap Penjualan</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-orange-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm uppercase tracking-widest flex items-center gap-3 hover:bg-orange-600 shadow-xl shadow-orange-500/20 transition-all self-start active:scale-95"
+          className="w-full sm:w-auto bg-orange-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-orange-600 shadow-xl shadow-orange-500/20 transition-all active:scale-95"
         >
           <Plus className="w-5 h-5" />
           Input Pendapatan
@@ -128,8 +128,8 @@ export default function Incomes() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-3 space-y-6">
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col gap-6">
+            <div className="relative w-full">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
@@ -139,24 +139,24 @@ export default function Incomes() {
                 className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl outline-none font-black text-xs text-slate-900 dark:text-white"
               />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 w-full sm:w-auto">
                 <Calendar className="w-4 h-4 text-orange-500" />
                 <input
                   type="date"
                   value={startDate}
                   onChange={e => setStartDate(e.target.value)}
-                  className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none"
+                  className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none w-full"
                 />
               </div>
               <span className="text-[10px] font-black text-slate-400 uppercase">s/d</span>
-              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 w-full sm:w-auto">
                 <Calendar className="w-4 h-4 text-orange-500" />
                 <input
                   type="date"
                   value={endDate}
                   onChange={e => setEndDate(e.target.value)}
-                  className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none"
+                  className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none w-full"
                 />
               </div>
             </div>
@@ -170,8 +170,8 @@ export default function Incomes() {
               </div>
             ) : (
               filtered.map((item, idx) => (
-                <div key={`${item.id}-${idx}`} className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800 flex items-center gap-6 group hover:shadow-md transition-all">
-                  <div className={`p-4 rounded-2xl border ${item.type === 'POS' ? 'bg-green-50 dark:bg-green-500/10 text-green-500 border-green-100 dark:border-green-500/20' : 'bg-orange-50 dark:bg-orange-500/10 text-orange-500 border-orange-100 dark:border-orange-500/20'}`}>
+                <div key={`${item.id}-${idx}`} className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center gap-6 group hover:shadow-md transition-all">
+                  <div className={`p-4 rounded-2xl border shrink-0 ${item.type === 'POS' ? 'bg-green-50 dark:bg-green-500/10 text-green-500 border-green-100 dark:border-green-500/20' : 'bg-orange-50 dark:bg-orange-500/10 text-orange-500 border-orange-100 dark:border-orange-500/20'}`}>
                     {item.type === 'POS' ? <ShoppingBag className="w-6 h-6" /> : <Wallet className="w-6 h-6" />}
                   </div>
                   <div
@@ -184,7 +184,7 @@ export default function Incomes() {
                         }
                       }
                     }}
-                    className={`flex-1 ${item.type === 'POS' ? 'cursor-pointer' : ''}`}
+                    className={`flex-1 min-w-0 ${item.type === 'POS' ? 'cursor-pointer' : ''}`}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`text-[10px] font-black uppercase tracking-widest ${item.type === 'POS' ? 'text-green-500' : 'text-orange-400'}`}>{item.category}</span>
@@ -192,15 +192,15 @@ export default function Incomes() {
                       <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">{formatDate(item.timestamp)}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-black text-slate-800 dark:text-white tracking-tight uppercase text-sm">{item.sourceName}</h4>
+                      <h4 className="font-black text-slate-800 dark:text-white tracking-tight uppercase text-sm truncate">{item.sourceName}</h4>
                       {item.type === 'POS' && <span className="text-[7px] font-black bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 uppercase">Klik Detail</span>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center justify-between w-full sm:w-auto gap-6 sm:pl-4 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-slate-800 pt-4 sm:pt-0">
                     <p className={`text-xl font-black ${item.type === 'POS' ? 'text-green-700 dark:text-green-400' : 'text-green-600 dark:text-green-500'}`}>+{formatCurrency(item.amount)}</p>
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteItem(item.id, item.type); }}
-                      className="p-3 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-3 text-slate-300 hover:text-red-500 transition-colors sm:opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>

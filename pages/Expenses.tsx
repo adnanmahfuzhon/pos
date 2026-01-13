@@ -135,14 +135,14 @@ export default function Expenses() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 md:gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Pengeluaran</h1>
           <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1 italic">Audit Biaya & Belanja Bahan</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-red-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm uppercase tracking-widest flex items-center gap-2 hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all self-start active:scale-95"
+          className="w-full sm:w-auto bg-red-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all active:scale-95"
         >
           <Plus className="w-5 h-5" />
           Input Biaya
@@ -151,8 +151,8 @@ export default function Expenses() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-3 space-y-6">
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col gap-6">
+            <div className="relative w-full">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
@@ -162,24 +162,24 @@ export default function Expenses() {
                 className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl outline-none font-black text-xs text-slate-900 dark:text-white"
               />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 w-full sm:w-auto">
                 <Calendar className="w-4 h-4 text-red-500" />
                 <input
                   type="date"
                   value={startDate}
                   onChange={e => setStartDate(e.target.value)}
-                  className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none"
+                  className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none w-full"
                 />
               </div>
               <span className="text-[10px] font-black text-slate-400 uppercase">s/d</span>
-              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 w-full sm:w-auto">
                 <Calendar className="w-4 h-4 text-red-500" />
                 <input
                   type="date"
                   value={endDate}
                   onChange={e => setEndDate(e.target.value)}
-                  className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none"
+                  className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none w-full"
                 />
               </div>
             </div>
@@ -193,26 +193,26 @@ export default function Expenses() {
               </div>
             ) : (
               filtered.map(expense => (
-                <div key={expense.id} className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800 flex items-center gap-6 group hover:shadow-md transition-all">
-                  <div className={`p-4 rounded-2xl ${expense.category === 'Bahan' ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-500 border-orange-100 dark:border-orange-500/20' : 'bg-blue-50 dark:bg-blue-500/10 text-blue-500 border-blue-100 dark:border-blue-500/20'}`}>
+                <div key={expense.id} className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center gap-6 group hover:shadow-md transition-all">
+                  <div className={`p-4 rounded-2xl shrink-0 ${expense.category === 'Bahan' ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-500 border-orange-100 dark:border-orange-500/20' : 'bg-blue-50 dark:bg-blue-500/10 text-blue-500 border-blue-100 dark:border-blue-500/20'}`}>
                     {expense.category === 'Bahan' ? <ShoppingBag className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{expense.category}</span>
                       <span className="w-1 h-1 bg-slate-200 dark:bg-slate-700 rounded-full"></span>
                       <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">{formatDate(expense.timestamp)}</span>
                     </div>
-                    <h4 className="font-black text-slate-800 dark:text-white tracking-tight uppercase text-sm">{expense.itemName}</h4>
+                    <h4 className="font-black text-slate-800 dark:text-white tracking-tight uppercase text-sm truncate">{expense.itemName}</h4>
                     {expense.category === 'Bahan' && (
                       <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase italic">Vol: {expense.quantity} unit | HPP: {formatCurrency(expense.amount / (expense.quantity || 1))}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center justify-between w-full sm:w-auto gap-6 sm:pl-4 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-slate-800 pt-4 sm:pt-0">
                     <p className="text-xl font-black text-red-500">-{formatCurrency(expense.amount)}</p>
                     <button
                       onClick={() => deleteExpenseFn(expense.id)}
-                      className="p-3 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-3 text-slate-300 hover:text-red-500 transition-colors sm:opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
