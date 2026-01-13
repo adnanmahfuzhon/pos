@@ -810,7 +810,7 @@ export default function Ingredients() {
                         {showIngDropdown && (
                           <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 z-[110] p-3">
                             <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-1">
-                              {ingredients.filter(i => i.type === 'Raw' && i.id !== editingIngredient?.id).map(ing => (
+                              {ingredients.filter(i => (i.type === 'Raw' || i.type === 'Packaging') && i.id !== editingIngredient?.id).map(ing => (
                                 <button key={ing.id} onClick={() => addIngredientToRecipe(ing.id)} className="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 hover:bg-orange-500 hover:text-white rounded-xl text-left transition-all">
                                   <span className="text-[10px] font-black uppercase">{ing.name}</span>
                                   <span className="text-[8px] font-bold opacity-60">{ing.unit}</span>
