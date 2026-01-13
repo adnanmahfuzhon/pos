@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Plus, Milk, Package, Layers, Droplets, AlertTriangle,
   X, Search, CheckCircle2, Edit2, Scan, CameraOff,
@@ -36,6 +36,10 @@ export default function Ingredients() {
   const [isProductionOpen, setIsProductionOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
   const [selectedIngForDetail, setSelectedIngForDetail] = useState<Ingredient | null>(null);
+
+  // Filter states
+  const [filterType, setFilterType] = useState<string>('All');
+  const [filterStatus, setFilterStatus] = useState<string>('All');
 
   // Scanner & Quick Update states
   const [selectedIngId, setSelectedIngId] = useState('');
@@ -229,7 +233,31 @@ export default function Ingredients() {
     setIsDetailOpen(true);
   };
 
-  const filtered = ingredients.filter(i => i.name.toLowerCase().includes(search.toLowerCase()) || i.code?.toLowerCase().includes(search.toLowerCase()));
+  const stats = useMemo(() => {
+    const counts = { Kritis: 0, Menipis: 0, Stabil: 0 };
+    ingredients.forEach(item => {
+      if (item.stock <= (item.minStock * 0.2)) counts.Kritis++;
+      else if (item.stock <= item.minStock) counts.Menipis++;
+      else counts.Stabil++;
+    });
+    return counts;
+  }, [ingredients]);
+
+  const filtered = useMemo(() => {
+    return ingredients.filter(i => {
+      const matchesSearch = i.name.toLowerCase().includes(search.toLowerCase()) || i.code?.toLowerCase().includes(search.toLowerCase());
+      const matchesType = filterType === 'All' || i.type === filterType;
+
+      let status = 'Stabil';
+      if (i.stock <= (i.minStock * 0.2)) status = 'Kritis';
+      else if (i.stock <= i.minStock) status = 'Menipis';
+
+      const matchesStatus = filterStatus === 'All' || status === filterStatus;
+
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [ingredients, search, filterType, filterStatus]);
+
   const formatCurrency = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
 
   return (
@@ -264,9 +292,34 @@ export default function Ingredients() {
         </div>
       </div>
 
+      {/* Status Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-6">
+          <div className="p-4 bg-red-50 text-red-500 rounded-2xl border border-red-100"><AlertTriangle className="w-8 h-8" /></div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Bahan Kritis</p>
+            <p className="text-3xl font-black text-slate-900 dark:text-white">{stats.Kritis}</p>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-6">
+          <div className="p-4 bg-orange-50 text-orange-500 rounded-2xl border border-orange-100"><Info className="w-8 h-8" /></div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Stok Menipis</p>
+            <p className="text-3xl font-black text-slate-900 dark:text-white">{stats.Menipis}</p>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-6">
+          <div className="p-4 bg-green-50 text-green-500 rounded-2xl border border-green-100"><CheckCircle2 className="w-8 h-8" /></div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Stok Stabil</p>
+            <p className="text-3xl font-black text-slate-900 dark:text-white">{stats.Stabil}</p>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
-        <div className="p-6 border-b border-slate-50 dark:border-slate-800">
-          <div className="relative max-w-md">
+        <div className="p-6 border-b border-slate-50 dark:border-slate-800 flex flex-col md:flex-row gap-6">
+          <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 dark:text-slate-600" />
             <input
               type="text"
@@ -275,6 +328,37 @@ export default function Ingredients() {
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl outline-none text-xs font-black text-slate-900 dark:text-white"
             />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tipe:</span>
+              <select
+                value={filterType}
+                onChange={e => setFilterType(e.target.value)}
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl px-4 py-3 text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none"
+              >
+                <option value="All">SEMUA</option>
+                <option value="Raw">MENTAH</option>
+                <option value="Processed">OLAHAN</option>
+                <option value="Mix">CAMPURAN</option>
+                <option value="Packaging">KEMASAN</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status:</span>
+              <select
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl px-4 py-3 text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none"
+              >
+                <option value="All">SEMUA STATUS</option>
+                <option value="Kritis">KRITIS</option>
+                <option value="Menipis">MENIPIS</option>
+                <option value="Stabil">STABIL</option>
+              </select>
+            </div>
           </div>
         </div>
 
