@@ -172,8 +172,26 @@ export default function Incomes() {
   const stats = useMemo(() => {
     const posTotal = filtered.filter(i => i.type === 'POS').reduce((sum, s) => sum + s.amount, 0);
     const manualTotal = filtered.filter(i => i.type === 'Manual').reduce((sum, i) => sum + i.amount, 0);
-    return { posTotal, manualTotal, combinedTotal: posTotal + manualTotal };
-  }, [filtered]);
+
+    // Channel breakdown
+    const channelTotals: Record<string, number> = {
+      'Offline': 0,
+      'ShopeeFood': 0,
+      'GrabFood': 0,
+      'GoFood': 0
+    };
+
+    filtered.forEach(item => {
+      if (item.type === 'POS') {
+        const sale = sales.find(s => s.id === item.id);
+        if (sale && sale.channel) {
+          channelTotals[sale.channel] = (channelTotals[sale.channel] || 0) + sale.totalAmount;
+        }
+      }
+    });
+
+    return { posTotal, manualTotal, combinedTotal: posTotal + manualTotal, channelTotals };
+  }, [filtered, sales]);
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
@@ -188,12 +206,52 @@ export default function Incomes() {
           <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1 italic">Audit Periode & Rekap Penjualan</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            resetForm();
+            setIsModalOpen(true);
+          }}
           className="w-full sm:w-auto bg-orange-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-orange-600 shadow-xl shadow-orange-500/20 transition-all active:scale-95"
         >
           <Plus className="w-5 h-5" />
           Input Pendapatan
         </button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {Object.entries(stats.channelTotals).map(([channel, total]) => {
+          const colors: Record<string, string> = {
+            'Offline': 'bg-slate-500',
+            'ShopeeFood': 'bg-orange-500',
+            'GrabFood': 'bg-green-500',
+            'GoFood': 'bg-red-500'
+          };
+          const bgColors: Record<string, string> = {
+            'Offline': 'bg-slate-50 dark:bg-slate-800/50',
+            'ShopeeFood': 'bg-orange-50 dark:bg-orange-500/5',
+            'GrabFood': 'bg-green-50 dark:bg-green-500/5',
+            'GoFood': 'bg-red-50 dark:bg-red-500/5'
+          };
+          const percentage = stats.posTotal > 0 ? (total / stats.posTotal) * 100 : 0;
+
+          return (
+            <div key={channel} className={`${bgColors[channel]} p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md group`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className={`w-2 h-2 rounded-full ${colors[channel]}`}></div>
+                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{channel}</span>
+              </div>
+              <p className="text-xl font-black text-slate-900 dark:text-white tracking-tighter mb-1">{formatCurrency(total)}</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${colors[channel]} transition-all duration-1000`}
+                    style={{ width: `${percentage}%` }}
+                  ></div>
+                </div>
+                <span className="text-[9px] font-bold text-slate-400">{Math.round(percentage)}%</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -252,7 +310,27 @@ export default function Incomes() {
                     </div>
                     <div className="flex items-center gap-2">
                       <h4 className="font-black text-slate-800 dark:text-white tracking-tight uppercase text-sm truncate">{item.sourceName}</h4>
-                      {item.type === 'POS' && <span className="text-[7px] font-black bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 uppercase">Klik Detail</span>}
+                      {item.type === 'POS' ? (
+                        <>
+                          {(() => {
+                            const sale = sales.find(s => s.id === item.id);
+                            if (!sale) return null;
+                            const channelColors: Record<string, string> = {
+                              'Offline': 'bg-slate-100 text-slate-500 dark:bg-slate-800',
+                              'ShopeeFood': 'bg-orange-100 text-orange-600 dark:bg-orange-500/20',
+                              'GrabFood': 'bg-green-100 text-green-600 dark:bg-green-500/20',
+                              'GoFood': 'bg-red-100 text-red-600 dark:bg-red-500/20'
+                            };
+                            return (
+                              <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter ${channelColors[sale.channel] || 'bg-slate-100 text-slate-500'}`}>
+                                {sale.channel}
+                              </span>
+                            );
+                          })()}
+                        </>
+                      ) : (
+                        <span className="text-[7px] font-black bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 uppercase">Manual</span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center justify-between w-full sm:w-auto gap-4 sm:pl-4 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-slate-800 pt-4 sm:pt-0">
