@@ -42,6 +42,13 @@ export default function POS() {
     getIngredients().then(setIngredients).catch(console.error);
   }, []);
 
+  // Auto-switch payment method when channel changes
+  useEffect(() => {
+    if (salesChannel !== 'Offline' && paymentMethod === 'Cash') {
+      setPaymentMethod('Non-Cash');
+    }
+  }, [salesChannel, paymentMethod]);
+
   const filteredProducts = useMemo(() => {
     return products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
   }, [products, search]);
@@ -353,7 +360,8 @@ export default function POS() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setPaymentMethod('Cash')}
-                className={`flex items-center justify-center gap-2 py-4 rounded-2xl border-2 transition-all ${paymentMethod === 'Cash' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-slate-50 dark:border-slate-800 bg-slate-50 text-slate-400'}`}
+                disabled={salesChannel !== 'Offline'}
+                className={`flex items-center justify-center gap-2 py-4 rounded-2xl border-2 transition-all ${paymentMethod === 'Cash' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-slate-50 dark:border-slate-800 bg-slate-50 text-slate-400'} ${salesChannel !== 'Offline' ? 'opacity-30 cursor-not-allowed grayscale' : ''}`}
               >
                 <Banknote className="w-4 h-4" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Tunai</span>
