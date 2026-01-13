@@ -178,17 +178,17 @@ export default function POS() {
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
 
   return (
-    <div className="flex h-[calc(100vh-64px)] lg:h-screen -m-4 md:-m-8 bg-slate-50 dark:bg-slate-950 overflow-hidden relative">
+    <div className="flex h-[calc(100vh-128px)] lg:h-screen -m-4 md:-m-8 bg-slate-50 dark:bg-slate-950 overflow-hidden relative">
 
       {/* LEFT: Menu Area */}
       <div className="flex-1 flex flex-col p-4 md:p-8 space-y-6 overflow-y-auto custom-scrollbar">
         <header className="flex flex-col gap-6 shrink-0">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
             <div>
-              <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase leading-none">Menu Console</h1>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase leading-none">Menu Console</h1>
               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-2 italic">Mode: {salesChannel}</p>
             </div>
-            <div className="relative w-full max-w-xs">
+            <div className="relative w-full md:max-w-xs">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
@@ -201,7 +201,7 @@ export default function POS() {
           </div>
 
           {/* Channel Selector */}
-          <div className="flex gap-2 p-1.5 bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm w-fit overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 p-1.5 bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm w-fit max-w-full overflow-x-auto no-scrollbar">
             {(['Offline', 'ShopeeFood', 'GrabFood', 'GoFood'] as SalesChannel[]).map(ch => (
               <button
                 key={ch}
