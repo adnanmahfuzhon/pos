@@ -140,27 +140,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     { icon: ShoppingCart, label: 'POS', path: '/POS' },
                     { icon: Milk, label: 'Gudang', path: '/Ingredients' },
                     { icon: TrendingUp, label: 'Income', path: '/Incomes' },
-                    { icon: Menu, label: 'Menu', onClick: () => setIsSidebarOpen(true) }
+                    { icon: Receipt, label: 'Biaya', path: '/Expenses' }
                 ].map((item, idx) => {
                     const isActive = router.pathname === item.path;
                     const Icon = item.icon;
                     return (
                         <div key={idx} className="flex flex-col items-center">
-                            {item.path ? (
-                                <Link
-                                    href={item.path}
-                                    className={`p-2.5 rounded-2xl transition-all ${isActive ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-slate-400'}`}
-                                >
-                                    <Icon className="w-5 h-5" />
-                                </Link>
-                            ) : (
-                                <button
-                                    onClick={item.onClick}
-                                    className="p-2.5 rounded-2xl text-slate-400"
-                                >
-                                    <Icon className="w-5 h-5" />
-                                </button>
-                            )}
+                            <Link
+                                href={item.path}
+                                className={`p-2.5 rounded-2xl transition-all ${isActive ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-slate-400'}`}
+                            >
+                                <Icon className="w-5 h-5" />
+                            </Link>
                         </div>
                     );
                 })}

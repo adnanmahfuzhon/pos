@@ -394,7 +394,7 @@ export default function POS() {
       </div>
 
       {/* Mobile Cart Toggle */}
-      <div className="lg:hidden fixed bottom-6 right-6 z-[75]">
+      <div className="lg:hidden fixed bottom-28 right-6 z-[75]">
         <button onClick={() => setIsMobileCartOpen(true)} className="bg-orange-500 text-white w-16 h-16 rounded-3xl shadow-2xl flex items-center justify-center relative">
           <ShoppingCart className="w-7 h-7" />
           {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-white text-orange-500 text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-orange-500">{cart.reduce((s, i) => s + i.quantity, 0)}</span>}
