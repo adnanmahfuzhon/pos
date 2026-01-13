@@ -274,14 +274,14 @@ export default function Expenses() {
               {category === 'Bahan' ? (
                 <>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Pilih Bahan Baku (Mentah)</label>
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Pilih Bahan (Mentah/Kemasan)</label>
                     <select
                       value={linkedIngredientId}
                       onChange={e => setLinkedIngredientId(e.target.value)}
                       className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-black text-slate-900 dark:text-white appearance-none"
                     >
-                      <option value="">-- Pilih Bahan Mentah --</option>
-                      {ingredients.filter(ing => ing.type === 'Raw').map(ing => (
+                      <option value="">-- Pilih Bahan --</option>
+                      {ingredients.filter(ing => ing.type === 'Raw' || ing.type === 'Packaging').map(ing => (
                         <option key={ing.id} value={ing.id}>{ing.name.toUpperCase()} ({ing.unit})</option>
                       ))}
                     </select>
