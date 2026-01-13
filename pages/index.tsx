@@ -35,6 +35,8 @@ import {
 } from '../store';
 import { Ingredient, Sale, Expense, Income, Product } from '../types';
 
+import DateFilter from '../components/DateFilter';
+
 export default function Dashboard() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -173,34 +175,22 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
-      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 md:gap-4">
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 md:gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Dashboard Audit</h1>
           <p className="text-slate-500 font-bold text-[10px] md:text-xs uppercase tracking-[0.2em] mt-2 italic">Monitoring Laba & Sinkronisasi Database</p>
         </div>
 
         {/* Date Filter Bar */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm w-full lg:w-auto">
-          <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 w-full sm:w-auto">
-            <Calendar className="w-4 h-4 text-orange-500" />
-            <input
-              type="date"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-              className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none w-full"
-            />
-          </div>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">s/d</span>
-          <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 w-full sm:w-auto">
-            <Calendar className="w-4 h-4 text-orange-500" />
-            <input
-              type="date"
-              value={endDate}
-              onChange={e => setEndDate(e.target.value)}
-              className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none w-full"
-            />
-          </div>
-        </div>
+        <DateFilter
+          startDate={startDate}
+          endDate={endDate}
+          onFilterChange={(start, end) => {
+            setStartDate(start);
+            setEndDate(end);
+          }}
+          color="orange"
+        />
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">

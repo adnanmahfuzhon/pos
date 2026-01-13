@@ -4,6 +4,8 @@ import { Plus, TrendingUp, Search, Wallet, HandCoins, CheckCircle2, X, ShoppingB
 import { getIncomes, createIncome, deleteIncome, getSales, deleteSale, getProducts } from '../store';
 import { Income, IncomeCategory, Sale, Product } from '../types';
 
+import DateFilter from '../components/DateFilter';
+
 export default function Incomes() {
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -128,7 +130,7 @@ export default function Incomes() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-3 space-y-6">
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col gap-6">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center gap-6">
             <div className="relative w-full">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
@@ -139,27 +141,16 @@ export default function Incomes() {
                 className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl outline-none font-black text-xs text-slate-900 dark:text-white"
               />
             </div>
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 w-full sm:w-auto">
-                <Calendar className="w-4 h-4 text-orange-500" />
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={e => setStartDate(e.target.value)}
-                  className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none w-full"
-                />
-              </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase">s/d</span>
-              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 w-full sm:w-auto">
-                <Calendar className="w-4 h-4 text-orange-500" />
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={e => setEndDate(e.target.value)}
-                  className="bg-transparent text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 outline-none w-full"
-                />
-              </div>
-            </div>
+
+            <DateFilter
+              startDate={startDate}
+              endDate={endDate}
+              onFilterChange={(start, end) => {
+                setStartDate(start);
+                setEndDate(end);
+              }}
+              color="orange"
+            />
           </div>
 
           <div className="space-y-4">
