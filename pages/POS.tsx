@@ -354,7 +354,7 @@ export default function POS() {
           )}
         </div>
 
-        <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-6 shrink-0">
+        <div className="p-8 pb-32 lg:pb-8 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-6 shrink-0">
           <div className="space-y-3">
             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pilih Pembayaran</p>
             <div className="grid grid-cols-2 gap-3">
