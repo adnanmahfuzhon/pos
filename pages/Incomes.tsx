@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, TrendingUp, Search, Wallet, HandCoins, CheckCircle2, X, ShoppingBag, Calendar, Filter, Trash2 } from 'lucide-react';
-import { getIncomes, createIncome, updateIncome, deleteIncome, getSales, updateSale, deleteSale, getProducts, calculateHPP } from '../store';
-import { Income, IncomeCategory, Sale, Product, SaleDetail } from '../types';
+import { getIncomes, createIncome, updateIncome, deleteIncome, getSales, updateSale, deleteSale, getProducts, getIngredients, calculateHPP } from '../store';
+import { Income, IncomeCategory, Sale, Product, SaleDetail, Ingredient } from '../types';
 
 import DateFilter from '../components/DateFilter';
 import { Edit2, Minus } from 'lucide-react';
@@ -11,6 +11,7 @@ export default function Incomes() {
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isEditSaleModalOpen, setIsEditSaleModalOpen] = useState(false);
@@ -32,6 +33,7 @@ export default function Incomes() {
     getIncomes().then(setIncomes).catch(console.error);
     getSales().then(setSales).catch(console.error);
     getProducts().then(setProducts).catch(console.error);
+    getIngredients().then(setIngredients).catch(console.error);
   }, []);
 
   const handleSave = async () => {
@@ -396,8 +398,44 @@ export default function Incomes() {
             </div>
 
             <div className="p-10 space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
-              <div className="space-y-4">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Atur Jumlah Pesanan</h3>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Item Pesanan</h3>
+                  <div className="relative w-48">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                    <select
+                      onChange={(e) => {
+                        const prodId = e.target.value;
+                        if (!prodId) return;
+                        const product = products.find(p => p.id === prodId);
+                        if (!product || !selectedSale) return;
+
+                        const existingIdx = selectedSale.details.findIndex(d => d.productId === prodId);
+                        const newDetails = [...selectedSale.details];
+
+                        if (existingIdx > -1) {
+                          newDetails[existingIdx] = { ...newDetails[existingIdx], quantity: newDetails[existingIdx].quantity + 1 };
+                        } else {
+                          newDetails.push({
+                            productId: product.id,
+                            quantity: 1,
+                            priceAtSale: product.channelPrices?.[selectedSale.channel] || product.price,
+                            hppAtSale: calculateHPP(product, ingredients) // Note: ingredients not available in this file? Let's check imports.
+                          });
+                        }
+                        setSelectedSale({ ...selectedSale, details: newDetails });
+                        e.target.value = "";
+                      }}
+                      className="w-full pl-8 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl outline-none text-[10px] font-black uppercase appearance-none cursor-pointer"
+                    >
+                      <option value="">+ Tambah Item</option>
+                      {products.filter(p => p.isActive).map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div className="space-y-4">
                   {selectedSale.details.map((detail, idx) => {
                     const product = products.find(p => p.id === detail.productId);
