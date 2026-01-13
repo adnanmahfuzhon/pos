@@ -85,6 +85,14 @@ export const createSale = async (data: Sale): Promise<Sale> => {
   });
 };
 
+export const updateSale = async (id: string, data: Partial<Sale>): Promise<Sale> => {
+  return fetchJson(`${API_URL}/sales/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+};
+
 export const deleteSale = async (id: string): Promise<void> => {
   return fetchJson(`${API_URL}/sales/${id}`, { method: 'DELETE' });
 };
@@ -112,6 +120,14 @@ export const getIncomes = async (): Promise<Income[]> => {
 export const createIncome = async (data: Income): Promise<Income> => {
   return fetchJson(`${API_URL}/incomes`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+};
+
+export const updateIncome = async (id: string, data: Partial<Income>): Promise<Income> => {
+  return fetchJson(`${API_URL}/incomes/${id}`, {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });

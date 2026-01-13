@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, TrendingUp, Search, Wallet, HandCoins, CheckCircle2, X, ShoppingBag, Calendar, Filter, Trash2 } from 'lucide-react';
-import { getIncomes, createIncome, deleteIncome, getSales, deleteSale, getProducts } from '../store';
-import { Income, IncomeCategory, Sale, Product } from '../types';
+import { getIncomes, createIncome, updateIncome, deleteIncome, getSales, updateSale, deleteSale, getProducts, calculateHPP } from '../store';
+import { Income, IncomeCategory, Sale, Product, SaleDetail } from '../types';
 
 import DateFilter from '../components/DateFilter';
+import { Edit2, Minus } from 'lucide-react';
 
 export default function Incomes() {
   const [incomes, setIncomes] = useState<Income[]>([]);
@@ -12,7 +13,9 @@ export default function Incomes() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isEditSaleModalOpen, setIsEditSaleModalOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [editingItem, setEditingItem] = useState<{ id: string, type: 'Manual' | 'POS' } | null>(null);
   const [search, setSearch] = useState('');
 
   // Date filter states
@@ -34,6 +37,20 @@ export default function Incomes() {
   const handleSave = async () => {
     if (!sourceName || amount <= 0) return;
 
+    if (editingItem && editingItem.type === 'Manual') {
+      try {
+        const updated = await updateIncome(editingItem.id, { category, sourceName, amount });
+        setIncomes(incomes.map(i => i.id === updated.id ? updated : i));
+        setIsModalOpen(false);
+        setEditingItem(null);
+        resetForm();
+      } catch (e) {
+        console.error("Failed to update income", e);
+        alert("Gagal mengupdate pemasukan");
+      }
+      return;
+    }
+
     const newIncome: Income = {
       id: `INC-${Date.now()}`,
       timestamp: Date.now(),
@@ -50,6 +67,54 @@ export default function Incomes() {
     } catch (e) {
       console.error("Failed to save income", e);
       alert("Gagal menyimpan pemasukan");
+    }
+  };
+
+  const handleEdit = (item: any) => {
+    setEditingItem({ id: item.id, type: item.type });
+    if (item.type === 'Manual') {
+      const income = incomes.find(i => i.id === item.id);
+      if (income) {
+        setCategory(income.category);
+        setSourceName(income.sourceName);
+        setAmount(income.amount);
+        setIsModalOpen(true);
+      }
+    } else {
+      const sale = sales.find(s => s.id === item.id);
+      if (sale) {
+        setSelectedSale(sale);
+        setIsEditSaleModalOpen(true);
+      }
+    }
+  };
+
+  const handleUpdateSale = async (updatedDetails: SaleDetail[]) => {
+    if (!selectedSale) return;
+
+    let totalAmount = 0;
+    let totalHPP = 0;
+
+    updatedDetails.forEach(detail => {
+      totalAmount += (detail.priceAtSale * detail.quantity);
+      totalHPP += (detail.hppAtSale * detail.quantity);
+    });
+
+    try {
+      const updated = await updateSale(selectedSale.id, {
+        ...selectedSale,
+        details: updatedDetails,
+        totalAmount,
+        totalHPP
+      });
+
+      setSales(sales.map(s => s.id === updated.id ? updated : s));
+      setIsEditSaleModalOpen(false);
+      setSelectedSale(null);
+      setEditingItem(null);
+    } catch (e) {
+      console.error("Failed to update sale", e);
+      alert("Gagal mengupdate transaksi");
     }
   };
 
@@ -74,6 +139,7 @@ export default function Incomes() {
     setCategory('Penjualan Luar');
     setSourceName('');
     setAmount(0);
+    setEditingItem(null);
   };
 
   const combinedList = useMemo(() => {
@@ -187,14 +253,22 @@ export default function Incomes() {
                       {item.type === 'POS' && <span className="text-[7px] font-black bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 uppercase">Klik Detail</span>}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between w-full sm:w-auto gap-6 sm:pl-4 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-slate-800 pt-4 sm:pt-0">
+                  <div className="flex items-center justify-between w-full sm:w-auto gap-4 sm:pl-4 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-slate-800 pt-4 sm:pt-0">
                     <p className={`text-xl font-black ${item.type === 'POS' ? 'text-green-700 dark:text-green-400' : 'text-green-600 dark:text-green-500'}`}>+{formatCurrency(item.amount)}</p>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteItem(item.id, item.type); }}
-                      className="p-3 text-slate-300 hover:text-red-500 transition-colors sm:opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleEdit(item); }}
+                        className="p-3 text-slate-300 hover:text-orange-500 transition-colors"
+                      >
+                        <Edit2 className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); deleteItem(item.id, item.type); }}
+                        className="p-3 text-slate-300 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -290,6 +364,105 @@ export default function Incomes() {
                 className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT SALE MODAL */}
+      {isEditSaleModalOpen && selectedSale && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300 border border-slate-200 dark:border-slate-800">
+            <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-orange-500 rounded-2xl text-white shadow-lg shadow-orange-500/20">
+                  <ShoppingBag className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Edit Pesanan</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Trx: {selectedSale.id.slice(-8).toUpperCase()}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsEditSaleModalOpen(false);
+                  setEditingItem(null);
+                }}
+                className="p-4 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-500 rounded-2xl transition-all"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-10 space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
+              <div className="space-y-4">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Atur Jumlah Pesanan</h3>
+                <div className="space-y-4">
+                  {selectedSale.details.map((detail, idx) => {
+                    const product = products.find(p => p.id === detail.productId);
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[2rem]">
+                        <div className="min-w-0 flex-1 mr-4">
+                          <p className="text-sm font-black text-slate-900 dark:text-white uppercase truncate">{product?.name || 'Produk'}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">{formatCurrency(detail.priceAtSale)} / Item</p>
+                        </div>
+                        <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                          <button
+                            onClick={() => {
+                              const newDetails = [...selectedSale.details];
+                              newDetails[idx] = { ...detail, quantity: Math.max(0, detail.quantity - 1) };
+                              setSelectedSale({ ...selectedSale, details: newDetails.filter(d => d.quantity > 0) });
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="text-sm font-black w-6 text-center text-slate-900 dark:text-white">{detail.quantity}</span>
+                          <button
+                            onClick={() => {
+                              const newDetails = [...selectedSale.details];
+                              newDetails[idx] = { ...detail, quantity: detail.quantity + 1 };
+                              setSelectedSale({ ...selectedSale, details: newDetails });
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-orange-500 transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {selectedSale.details.length === 0 && (
+                    <div className="p-10 text-center bg-red-50 dark:bg-red-500/10 rounded-2xl border border-red-100 dark:border-red-500/20">
+                      <p className="text-[10px] font-black text-red-500 uppercase">Pesanan kosong. Klik simpan untuk menghapus transaksi ini.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-10 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Baru</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
+                    {formatCurrency(selectedSale.details.reduce((sum, d) => sum + (d.priceAtSale * d.quantity), 0))}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (selectedSale.details.length === 0) {
+                    deleteItem(selectedSale.id, 'POS');
+                    setIsEditSaleModalOpen(false);
+                  } else {
+                    handleUpdateSale(selectedSale.details);
+                  }
+                }}
+                className="w-full py-6 bg-orange-500 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-2xl hover:bg-orange-600 transition-all shadow-orange-500/20 active:scale-95 flex items-center justify-center gap-3"
+              >
+                <CheckCircle2 className="w-5 h-5" /> Simpan Perubahan
               </button>
             </div>
           </div>
