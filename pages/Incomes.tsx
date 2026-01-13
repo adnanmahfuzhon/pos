@@ -1,13 +1,16 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, TrendingUp, Search, Wallet, HandCoins, CheckCircle2, X, ShoppingBag, Calendar, Filter, Trash2 } from 'lucide-react';
-import { getIncomes, createIncome, deleteIncome, getSales, deleteSale } from '../store';
-import { Income, IncomeCategory, Sale } from '../types';
+import { getIncomes, createIncome, deleteIncome, getSales, deleteSale, getProducts } from '../store';
+import { Income, IncomeCategory, Sale, Product } from '../types';
 
 export default function Incomes() {
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [search, setSearch] = useState('');
 
   // Date filter states
@@ -23,6 +26,7 @@ export default function Incomes() {
   useEffect(() => {
     getIncomes().then(setIncomes).catch(console.error);
     getSales().then(setSales).catch(console.error);
+    getProducts().then(setProducts).catch(console.error);
   }, []);
 
   const handleSave = async () => {
@@ -170,18 +174,32 @@ export default function Incomes() {
                   <div className={`p-4 rounded-2xl border ${item.type === 'POS' ? 'bg-green-50 dark:bg-green-500/10 text-green-500 border-green-100 dark:border-green-500/20' : 'bg-orange-50 dark:bg-orange-500/10 text-orange-500 border-orange-100 dark:border-orange-500/20'}`}>
                     {item.type === 'POS' ? <ShoppingBag className="w-6 h-6" /> : <Wallet className="w-6 h-6" />}
                   </div>
-                  <div className="flex-1">
+                  <div
+                    onClick={() => {
+                      if (item.type === 'POS') {
+                        const fullSale = sales.find(s => s.id === item.id);
+                        if (fullSale) {
+                          setSelectedSale(fullSale);
+                          setIsDetailOpen(true);
+                        }
+                      }
+                    }}
+                    className={`flex-1 ${item.type === 'POS' ? 'cursor-pointer' : ''}`}
+                  >
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`text-[10px] font-black uppercase tracking-widest ${item.type === 'POS' ? 'text-green-500' : 'text-orange-400'}`}>{item.category}</span>
                       <span className="w-1 h-1 bg-slate-200 dark:bg-slate-700 rounded-full"></span>
                       <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">{formatDate(item.timestamp)}</span>
                     </div>
-                    <h4 className="font-black text-slate-800 dark:text-white tracking-tight uppercase text-sm">{item.sourceName}</h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-black text-slate-800 dark:text-white tracking-tight uppercase text-sm">{item.sourceName}</h4>
+                      {item.type === 'POS' && <span className="text-[7px] font-black bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 uppercase">Klik Detail</span>}
+                    </div>
                   </div>
                   <div className="flex items-center gap-6">
                     <p className={`text-xl font-black ${item.type === 'POS' ? 'text-green-700 dark:text-green-400' : 'text-green-600 dark:text-green-500'}`}>+{formatCurrency(item.amount)}</p>
                     <button
-                      onClick={() => deleteItem(item.id, item.type)}
+                      onClick={(e) => { e.stopPropagation(); deleteItem(item.id, item.type); }}
                       className="p-3 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -220,6 +238,72 @@ export default function Incomes() {
           </div>
         </div>
       </div>
+
+      {/* SALE DETAIL MODAL */}
+      {isDetailOpen && selectedSale && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300 border border-slate-200 dark:border-slate-800">
+            <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-green-500 rounded-2xl text-white shadow-lg shadow-green-500/20">
+                  <ShoppingBag className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Detail Penjualan</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Trx: {selectedSale.id.slice(-8).toUpperCase()}</p>
+                </div>
+              </div>
+              <button onClick={() => setIsDetailOpen(false)} className="p-4 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-500 rounded-2xl transition-all">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-10 space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
+              <div className="space-y-4">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Item Pesanan</h3>
+                <div className="space-y-3">
+                  {selectedSale.details.map((detail, idx) => {
+                    const product = products.find(p => p.id === detail.productId);
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl">
+                        <div>
+                          <p className="text-xs font-black text-slate-900 dark:text-white uppercase">{product?.name || 'Produk Tidak Dikenal'}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">{detail.quantity} x {formatCurrency(detail.priceAtSale)}</p>
+                        </div>
+                        <p className="text-xs font-black text-slate-900 dark:text-white">{formatCurrency(detail.quantity * detail.priceAtSale)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-center">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Metode Bayar</p>
+                  <p className="text-xs font-black text-slate-900 dark:text-white uppercase">{selectedSale.paymentMethod}</p>
+                </div>
+                <div className="p-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-center">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Channel</p>
+                  <p className="text-xs font-black text-slate-900 dark:text-white uppercase">{selectedSale.channel}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-10 bg-slate-950 border-t border-slate-800 flex justify-between items-center">
+              <div>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Transaksi</p>
+                <p className="text-3xl font-black text-green-500 tracking-tighter">{formatCurrency(selectedSale.totalAmount)}</p>
+              </div>
+              <button
+                onClick={() => setIsDetailOpen(false)}
+                className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
