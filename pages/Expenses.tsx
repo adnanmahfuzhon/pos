@@ -13,7 +13,13 @@ export default function Expenses() {
   const [search, setSearch] = useState('');
 
   // Date filter states
-  const today = new Date().toISOString().split('T')[0];
+  const today = (() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  })();
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
 
@@ -23,6 +29,7 @@ export default function Expenses() {
   const [amount, setAmount] = useState(0);
   const [linkedIngredientId, setLinkedIngredientId] = useState('');
   const [quantity, setQuantity] = useState(0);
+  const [customDate, setCustomDate] = useState(today);
 
   // FIX: Define derived values for HPP preview in the modal
   const targetIng = useMemo(() => ingredients.find(i => i.id === linkedIngredientId), [ingredients, linkedIngredientId]);
@@ -40,9 +47,11 @@ export default function Expenses() {
       return;
     }
 
+    const timestamp = new Date(`${customDate}T12:00:00`).getTime();
+
     const newExpense: Expense = {
       id: `EXP-${Date.now()}`,
-      timestamp: Date.now(),
+      timestamp,
       category,
       itemName: category === 'Bahan' ? ingredients.find(i => i.id === linkedIngredientId)?.name || '' : itemName,
       amount,
@@ -114,6 +123,7 @@ export default function Expenses() {
     setAmount(0);
     setLinkedIngredientId('');
     setQuantity(0);
+    setCustomDate(today);
   };
 
   const filtered = useMemo(() => {
@@ -299,6 +309,16 @@ export default function Expenses() {
                     </div>
                   </div>
 
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Tanggal</label>
+                    <input
+                      type="date"
+                      value={customDate}
+                      onChange={e => setCustomDate(e.target.value)}
+                      className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-black text-slate-900 dark:text-white uppercase text-xs"
+                    />
+                  </div>
+
                   {targetIng && previewUnitPrice > 0 && (
                     <div className={`p-5 rounded-2xl border flex items-start gap-4 animate-in slide-in-from-bottom duration-300 ${priceDiff > 0 ? 'bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20' : 'bg-green-50 dark:bg-green-500/10 border-green-100 dark:border-green-500/20'}`}>
                       <AlertCircle className={`w-5 h-5 shrink-0 mt-0.5 ${priceDiff > 0 ? 'text-red-500' : 'text-green-500'}`} />
@@ -324,14 +344,25 @@ export default function Expenses() {
                       placeholder="Contoh: Listrik Bulanan"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Nominal (Rp)</label>
-                    <input
-                      type="number"
-                      value={amount}
-                      onChange={e => setAmount(Number(e.target.value))}
-                      className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-black text-slate-900 dark:text-white text-xl"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Nominal (Rp)</label>
+                      <input
+                        type="number"
+                        value={amount}
+                        onChange={e => setAmount(Number(e.target.value))}
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-black text-slate-900 dark:text-white text-xl"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Tanggal</label>
+                      <input
+                        type="date"
+                        value={customDate}
+                        onChange={e => setCustomDate(e.target.value)}
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-black text-slate-900 dark:text-white uppercase text-xs h-full"
+                      />
+                    </div>
                   </div>
                 </>
               )}

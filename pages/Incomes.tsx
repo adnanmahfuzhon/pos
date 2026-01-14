@@ -20,7 +20,13 @@ export default function Incomes() {
   const [search, setSearch] = useState('');
 
   // Date filter states
-  const today = new Date().toISOString().split('T')[0];
+  const today = (() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  })();
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
 
@@ -28,6 +34,7 @@ export default function Incomes() {
   const [category, setCategory] = useState<IncomeCategory>('Penjualan Luar');
   const [sourceName, setSourceName] = useState('');
   const [amount, setAmount] = useState(0);
+  const [customDate, setCustomDate] = useState(today);
 
   useEffect(() => {
     getIncomes().then(setIncomes).catch(console.error);
@@ -39,9 +46,11 @@ export default function Incomes() {
   const handleSave = async () => {
     if (!sourceName || amount <= 0) return;
 
+    const timestamp = new Date(`${customDate}T12:00:00`).getTime();
+
     if (editingItem && editingItem.type === 'Manual') {
       try {
-        const updated = await updateIncome(editingItem.id, { category, sourceName, amount });
+        const updated = await updateIncome(editingItem.id, { category, sourceName, amount, timestamp });
         setIncomes(incomes.map(i => i.id === updated.id ? updated : i));
         setIsModalOpen(false);
         setEditingItem(null);
@@ -55,7 +64,7 @@ export default function Incomes() {
 
     const newIncome: Income = {
       id: `INC-${Date.now()}`,
-      timestamp: Date.now(),
+      timestamp,
       category,
       sourceName,
       amount
@@ -141,6 +150,7 @@ export default function Incomes() {
     setCategory('Penjualan Luar');
     setSourceName('');
     setAmount(0);
+    setCustomDate(today);
     setEditingItem(null);
   };
 
@@ -625,14 +635,25 @@ export default function Incomes() {
                 />
               </div>
 
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Nominal (Rp)</label>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={e => setAmount(Number(e.target.value))}
-                  className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-black text-slate-900 dark:text-white text-xl"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Nominal (Rp)</label>
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={e => setAmount(Number(e.target.value))}
+                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-black text-slate-900 dark:text-white text-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Tanggal</label>
+                  <input
+                    type="date"
+                    value={customDate}
+                    onChange={e => setCustomDate(e.target.value)}
+                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-black text-slate-900 dark:text-white uppercase text-xs h-full"
+                  />
+                </div>
               </div>
             </div>
 

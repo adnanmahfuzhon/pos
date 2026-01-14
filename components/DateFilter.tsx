@@ -35,15 +35,20 @@ export default function DateFilter({ startDate, endDate, onFilterChange, color =
     }, []);
 
     const getPresets = (): { label: DatePreset; getRange: () => [string, string] }[] => {
-        const today = new Date();
-        const formatDate = (date: Date) => date.toISOString().split('T')[0];
+        const formatDate = (d: Date) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
 
         return [
             {
                 label: 'Hari Ini',
                 getRange: () => {
                     const d = new Date();
-                    return [formatDate(d), formatDate(d)];
+                    const datestr = formatDate(d);
+                    return [datestr, datestr];
                 }
             },
             {
@@ -51,7 +56,8 @@ export default function DateFilter({ startDate, endDate, onFilterChange, color =
                 getRange: () => {
                     const d = new Date();
                     d.setDate(d.getDate() - 1);
-                    return [formatDate(d), formatDate(d)];
+                    const datestr = formatDate(d);
+                    return [datestr, datestr];
                 }
             },
             {
@@ -129,8 +135,8 @@ export default function DateFilter({ startDate, endDate, onFilterChange, color =
                                 key={preset.label}
                                 onClick={() => handlePresetClick(preset)}
                                 className={`w-full flex items-center justify-between px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activePreset === preset.label
-                                        ? `${activeBg} text-white shadow-lg`
-                                        : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-400'
+                                    ? `${activeBg} text-white shadow-lg`
+                                    : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-400'
                                     }`}
                             >
                                 {preset.label}
