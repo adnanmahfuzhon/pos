@@ -239,8 +239,6 @@ export default function Ingredients() {
     setIsDetailOpen(true);
   };
 
-  if (isLoading) return <SkeletonIngredients />;
-
   const stats = useMemo(() => {
     const counts = { Kritis: 0, Menipis: 0, Stabil: 0 };
     ingredients.forEach(item => {
@@ -265,6 +263,8 @@ export default function Ingredients() {
       return matchesSearch && matchesType && matchesStatus;
     });
   }, [ingredients, search, filterType, filterStatus]);
+
+  if (isLoading) return <SkeletonIngredients />;
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
 
