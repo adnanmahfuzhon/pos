@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Coffee, Search, Trash2, Edit2, X, Save, ShieldCheck, ChevronDown, ImageIcon, Link as LinkIcon, MoreHorizontal, Globe, Image as ImageIconLucide } from 'lucide-react';
 import { getProducts, getIngredients, createProduct, updateProduct, deleteProduct, calculateHPP } from '../store';
 import { Product, Ingredient, ProductIngredient, SalesChannel } from '../types';
+import SkeletonProducts from '../components/SkeletonProducts';
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -10,6 +11,7 @@ export default function Products() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   // Form states
   const [name, setName] = useState('');
@@ -26,8 +28,15 @@ export default function Products() {
   const [showIngDropdown, setShowIngDropdown] = useState(false);
 
   useEffect(() => {
-    getProducts().then(setProducts).catch(console.error);
-    getIngredients().then(setIngredients).catch(console.error);
+    setIsLoading(true);
+    Promise.all([
+      getProducts(),
+      getIngredients()
+    ]).then(([products, ingredients]) => {
+      setProducts(products);
+      setIngredients(ingredients);
+    }).catch(console.error)
+      .finally(() => setIsLoading(false));
   }, []);
 
   const filteredProducts = products.filter(p =>
@@ -127,6 +136,8 @@ export default function Products() {
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+
+  if (isLoading) return <SkeletonProducts />;
 
   const handleChannelPriceChange = (channel: SalesChannel, value: number) => {
     setChannelPrices(prev => ({ ...prev, [channel]: value }));

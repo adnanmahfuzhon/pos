@@ -20,6 +20,7 @@ import {
 } from 'recharts';
 import { getIngredients, createIngredient, updateIngredient, deleteIngredient, produceIngredient } from '../store';
 import { Ingredient, IngredientType, ProductIngredient } from '../types';
+import SkeletonIngredients from '../components/SkeletonIngredients';
 
 declare global {
   interface Window {
@@ -36,6 +37,7 @@ export default function Ingredients() {
   const [isProductionOpen, setIsProductionOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
   const [selectedIngForDetail, setSelectedIngForDetail] = useState<Ingredient | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Filter states
   const [filterType, setFilterType] = useState<string>('All');
@@ -64,7 +66,11 @@ export default function Ingredients() {
   const [batchHelper, setBatchHelper] = useState<{ id: string, rawQty: number, yieldQty: number } | null>(null);
 
   useEffect(() => {
-    getIngredients().then(setIngredients).catch(console.error);
+    setIsLoading(true);
+    getIngredients()
+      .then(setIngredients)
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
   }, []);
 
   // AUTOMATIC HPP CALCULATION FOR PROCESSED/MIX
@@ -232,6 +238,8 @@ export default function Ingredients() {
     setSelectedIngForDetail(ing);
     setIsDetailOpen(true);
   };
+
+  if (isLoading) return <SkeletonIngredients />;
 
   const stats = useMemo(() => {
     const counts = { Kritis: 0, Menipis: 0, Stabil: 0 };

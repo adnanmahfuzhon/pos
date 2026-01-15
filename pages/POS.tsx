@@ -24,6 +24,7 @@ import {
   calculateHPP
 } from '../store';
 import { Product, Ingredient, Sale, PaymentMethod, SalesChannel } from '../types';
+import SkeletonPOS from '../components/SkeletonPOS';
 
 export default function POS() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -36,10 +37,18 @@ export default function POS() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [stockWarning, setStockWarning] = useState<string | null>(null);
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    getProducts().then(products => setProducts(products.filter(p => p.isActive))).catch(console.error);
-    getIngredients().then(setIngredients).catch(console.error);
+    setIsLoading(true);
+    Promise.all([
+      getProducts().then(products => products.filter(p => p.isActive)),
+      getIngredients()
+    ]).then(([products, ingredients]) => {
+      setProducts(products);
+      setIngredients(ingredients);
+    }).catch(console.error)
+      .finally(() => setIsLoading(false));
   }, []);
 
   // Auto-switch payment method when channel changes
@@ -98,6 +107,8 @@ export default function POS() {
     }
     return true;
   }, [cart, ingredients]);
+
+  if (isLoading) return <SkeletonPOS />;
 
   const addToCart = (product: Product) => {
     const { valid, message } = checkStockAvailability(product, 1);

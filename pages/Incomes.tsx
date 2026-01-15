@@ -6,6 +6,7 @@ import { Income, IncomeCategory, Sale, Product, SaleDetail, Ingredient } from '.
 
 import DateFilter from '../components/DateFilter';
 import { Edit2, Minus } from 'lucide-react';
+import SkeletonTransactions from '../components/SkeletonTransactions';
 
 export default function Incomes() {
   const [incomes, setIncomes] = useState<Income[]>([]);
@@ -18,6 +19,7 @@ export default function Incomes() {
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [editingItem, setEditingItem] = useState<{ id: string, type: 'Manual' | 'POS' } | null>(null);
   const [search, setSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   // Date filter states
   const today = (() => {
@@ -37,10 +39,19 @@ export default function Incomes() {
   const [customDate, setCustomDate] = useState(today);
 
   useEffect(() => {
-    getIncomes().then(setIncomes).catch(console.error);
-    getSales().then(setSales).catch(console.error);
-    getProducts().then(setProducts).catch(console.error);
-    getIngredients().then(setIngredients).catch(console.error);
+    setIsLoading(true);
+    Promise.all([
+      getIncomes(),
+      getSales(),
+      getProducts(),
+      getIngredients()
+    ]).then(([incomes, sales, products, ingredients]) => {
+      setIncomes(incomes);
+      setSales(sales);
+      setProducts(products);
+      setIngredients(ingredients);
+    }).catch(console.error)
+      .finally(() => setIsLoading(false));
   }, []);
 
   const handleSave = async () => {
@@ -202,6 +213,8 @@ export default function Incomes() {
 
     return { posTotal, manualTotal, combinedTotal: posTotal + manualTotal, channelTotals };
   }, [filtered, sales]);
+
+  if (isLoading) return <SkeletonTransactions />;
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);

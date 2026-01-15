@@ -37,11 +37,14 @@ import { Ingredient, Sale, Expense, Income, Product } from '../types';
 
 import DateFilter from '../components/DateFilter';
 
+import SkeletonDashboard from '../components/SkeletonDashboard';
+
 export default function Dashboard() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Date Filter states
   const today = (() => {
@@ -59,6 +62,7 @@ export default function Dashboard() {
   }, []);
 
   const refreshData = async () => {
+    setIsLoading(true);
     try {
       const [salesData, expensesData, incomesData, ingredientsData] = await Promise.all([
         getSales(),
@@ -72,6 +76,8 @@ export default function Dashboard() {
       setIngredients(ingredientsData);
     } catch (error) {
       console.error("Failed to load dashboard data:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -122,6 +128,8 @@ export default function Dashboard() {
     { name: 'Beban', value: totalOpExpenses, color: '#ef4444' },
     { name: 'Laba', value: Math.max(0, estimatedProfit), color: '#22c55e' }
   ];
+
+  if (isLoading) return <SkeletonDashboard />;
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);

@@ -5,12 +5,14 @@ import { getExpenses, createExpense, deleteExpense, getIngredients, updateIngred
 import { Expense, Ingredient, ExpenseCategory, PriceRecord } from '../types';
 
 import DateFilter from '../components/DateFilter';
+import SkeletonTransactions from '../components/SkeletonTransactions';
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   // Date filter states
   const today = (() => {
@@ -37,8 +39,15 @@ export default function Expenses() {
   const priceDiff = targetIng ? previewUnitPrice - targetIng.pricePerUnit : 0;
 
   useEffect(() => {
-    getExpenses().then(setExpenses).catch(console.error);
-    getIngredients().then(setIngredients).catch(console.error);
+    setIsLoading(true);
+    Promise.all([
+      getExpenses(),
+      getIngredients()
+    ]).then(([expenses, ingredients]) => {
+      setExpenses(expenses);
+      setIngredients(ingredients);
+    }).catch(console.error)
+      .finally(() => setIsLoading(false));
   }, []);
 
   const handleSave = async () => {
@@ -139,6 +148,8 @@ export default function Expenses() {
   const totalFilteredAmount = useMemo(() => {
     return filtered.reduce((sum, e) => sum + e.amount, 0);
   }, [filtered]);
+
+  if (isLoading) return <SkeletonTransactions />;
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
