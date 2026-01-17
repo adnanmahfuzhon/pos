@@ -10,16 +10,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const { id, branchId, ...data } = req.body;
             const targetBranchId = branchId || 'default';
 
-            // Ensure branch exists
-            await prisma.branch.upsert({
-                where: { id: targetBranchId },
-                update: {},
-                create: { id: targetBranchId, name: 'Default Branch' }
-            });
-
-            const expense = await prisma.expense.create({
-                data: { id, ...data, branchId: targetBranchId }
-            });
+            // Try to create expense, catch foreign key error and create branch if needed
+            let expense;
+            try {
+                expense = await prisma.expense.create({
+                    data: { id, ...data, branchId: targetBranchId }
+                });
+            } catch (e: any) {
+                if (e.code === 'P2003') {
+                    await prisma.branch.create({
+                        data: { id: targetBranchId, name: 'Default Branch' }
+                    });
+                    expense = await prisma.expense.create({
+                        data: { id, ...data, branchId: targetBranchId }
+                    });
+                } else {
+                    throw e;
+                }
+            }
             return res.status(200).json(expense);
         } catch (error: any) {
             console.error('Expense creation error:', error);

@@ -12,43 +12,76 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const { id, details, branchId, ...data } = req.body;
             const targetBranchId = branchId || 'default';
 
-            // Ensure branch exists
-            await prisma.branch.upsert({
-                where: { id: targetBranchId },
-                update: {},
-                create: { id: targetBranchId, name: 'Default Branch' }
-            });
-
-            const sale = await prisma.sale.create({
-                data: {
-                    id,
-                    ...data,
-                    branchId: targetBranchId,
-                    details: {
-                        create: details
+            // Use transaction for atomic operations
+            const result = await prisma.$transaction(async (tx) => {
+                // Try to create sale, catch foreign key error and create branch if needed
+                try {
+                    const sale = await tx.sale.create({
+                        data: {
+                            id,
+                            ...data,
+                            branchId: targetBranchId,
+                            details: { create: details }
+                        },
+                        include: { details: true }
+                    });
+                    return sale;
+                } catch (e: any) {
+                    if (e.code === 'P2003') {
+                        // Branch doesn't exist, create it
+                        await tx.branch.create({
+                            data: { id: targetBranchId, name: 'Default Branch' }
+                        });
+                        // Retry sale creation
+                        return await tx.sale.create({
+                            data: {
+                                id,
+                                ...data,
+                                branchId: targetBranchId,
+                                details: { create: details }
+                            },
+                            include: { details: true }
+                        });
                     }
-                },
-                include: { details: true }
+                    throw e;
+                }
             });
 
-            // Update stock
+            // Batch collect all stock decrements
+            const stockUpdates: { ingredientId: string; decrementBy: number }[] = [];
+
             for (const detail of details) {
                 const product = await prisma.product.findUnique({
                     where: { id: detail.productId },
-                    include: { ingredients: true }
+                    select: { ingredients: true }
                 });
 
-                if (product && product.ingredients) {
+                if (product?.ingredients) {
                     for (const pIng of product.ingredients) {
-                        await prisma.ingredient.update({
-                            where: { id: pIng.ingredientId },
-                            data: { stock: { decrement: pIng.quantity * detail.quantity } }
-                        });
+                        const existing = stockUpdates.find(u => u.ingredientId === pIng.ingredientId);
+                        if (existing) {
+                            existing.decrementBy += pIng.quantity * detail.quantity;
+                        } else {
+                            stockUpdates.push({
+                                ingredientId: pIng.ingredientId,
+                                decrementBy: pIng.quantity * detail.quantity
+                            });
+                        }
                     }
                 }
             }
 
-            return res.status(200).json(sale);
+            // Execute all stock updates in parallel
+            await Promise.all(
+                stockUpdates.map(u =>
+                    prisma.ingredient.update({
+                        where: { id: u.ingredientId },
+                        data: { stock: { decrement: u.decrementBy } }
+                    })
+                )
+            );
+
+            return res.status(200).json(result);
         } catch (error: any) {
             console.error('Sale creation error:', error);
             return res.status(500).json({
