@@ -7,9 +7,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(200).json(incomes);
     } else if (req.method === 'POST') {
         try {
-            const { id, ...data } = req.body;
+            const { id, branchId, ...data } = req.body;
             const income = await prisma.income.create({
-                data: { id, ...data }
+                data: { id, ...data, branchId: branchId || 'default' }
             });
             return res.status(200).json(income);
         } catch (error: any) {

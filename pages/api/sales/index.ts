@@ -9,11 +9,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(200).json(sales);
     } else if (req.method === 'POST') {
         try {
-            const { id, details, ...data } = req.body;
+            const { id, details, branchId, ...data } = req.body;
             const sale = await prisma.sale.create({
                 data: {
                     id,
                     ...data,
+                    branchId: branchId || 'default',
                     details: {
                         create: details
                     }
