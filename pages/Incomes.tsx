@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, TrendingUp, Search, Wallet, HandCoins, CheckCircle2, X, ShoppingBag, Calendar, Filter, Trash2 } from 'lucide-react';
+import { Plus, TrendingUp, Search, Wallet, HandCoins, CheckCircle2, X, ShoppingBag, Calendar, Filter, Trash2, Printer } from 'lucide-react';
 import { getIncomes, createIncome, updateIncome, deleteIncome, getSales, updateSale, deleteSale, getProducts, getIngredients, calculateHPP } from '../store';
 import { Income, IncomeCategory, Sale, Product, SaleDetail, Ingredient } from '../types';
 
@@ -8,6 +8,7 @@ import DateFilter from '../components/DateFilter';
 import { Edit2, Minus, Loader2 } from 'lucide-react';
 import SkeletonTransactions from '../components/SkeletonTransactions';
 import { useToast } from '../context/ToastContext';
+import { isBluetoothSupported, printReceipt, ReceiptData } from '../lib/thermalPrint';
 
 export default function Incomes() {
   const [incomes, setIncomes] = useState<Income[]>([]);
@@ -22,6 +23,7 @@ export default function Incomes() {
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   const { showToast, updateToast } = useToast();
 
   // Date filter states
@@ -472,17 +474,57 @@ export default function Incomes() {
               </div>
             </div>
 
-            <div className="p-10 bg-slate-950 border-t border-slate-800 flex justify-between items-center">
+            <div className="p-10 bg-slate-950 border-t border-slate-800 flex justify-between items-center gap-4">
               <div>
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Transaksi</p>
                 <p className="text-3xl font-black text-green-500 tracking-tighter">{formatCurrency(selectedSale.totalAmount)}</p>
               </div>
-              <button
-                onClick={() => setIsDetailOpen(false)}
-                className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
-              >
-                Tutup
-              </button>
+              <div className="flex items-center gap-3">
+                {isBluetoothSupported() && (
+                  <button
+                    onClick={async () => {
+                      if (!selectedSale) return;
+                      setIsPrinting(true);
+                      const toastId = showToast('Menghubungkan printer...', 'loading');
+                      try {
+                        const receiptData: ReceiptData = {
+                          transactionId: selectedSale.id,
+                          timestamp: selectedSale.timestamp,
+                          channel: selectedSale.channel,
+                          paymentMethod: selectedSale.paymentMethod,
+                          items: selectedSale.details.map(d => {
+                            const product = products.find(p => p.id === d.productId);
+                            return {
+                              name: product?.name || 'Produk',
+                              quantity: d.quantity,
+                              price: d.priceAtSale
+                            };
+                          }),
+                          total: selectedSale.totalAmount,
+                          storeName: 'FLAVORPOS'
+                        };
+                        await printReceipt(receiptData);
+                        updateToast(toastId, 'Struk berhasil dicetak!', 'success');
+                      } catch (e: any) {
+                        updateToast(toastId, e.message || 'Gagal mencetak struk', 'error');
+                      } finally {
+                        setIsPrinting(false);
+                      }
+                    }}
+                    disabled={isPrinting}
+                    className="px-6 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-orange-500/20 disabled:opacity-50 active:scale-95"
+                  >
+                    {isPrinting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                    {isPrinting ? 'Mencetak...' : 'Cetak Struk'}
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsDetailOpen(false)}
+                  className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
+                >
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
         </div>
