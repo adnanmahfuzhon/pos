@@ -39,9 +39,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             return res.status(200).json(sale);
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: 'Failed to create sale' });
+        } catch (error: any) {
+            console.error('Sale creation error:', error);
+            return res.status(500).json({
+                error: 'Failed to create sale',
+                details: error.message || 'Unknown error',
+                code: error.code || null
+            });
         }
     } else {
         res.setHeader('Allow', ['GET', 'POST']);

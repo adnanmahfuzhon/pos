@@ -12,8 +12,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 data: { id, ...data }
             });
             return res.status(200).json(expense);
-        } catch (error) {
-            return res.status(500).json({ error: 'Failed to create expense' });
+        } catch (error: any) {
+            console.error('Expense creation error:', error);
+            return res.status(500).json({
+                error: 'Failed to create expense',
+                details: error.message || 'Unknown error',
+                code: error.code || null
+            });
         }
     } else {
         res.setHeader('Allow', ['GET', 'POST']);

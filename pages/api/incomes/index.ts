@@ -12,8 +12,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 data: { id, ...data }
             });
             return res.status(200).json(income);
-        } catch (error) {
-            return res.status(500).json({ error: 'Failed to create income' });
+        } catch (error: any) {
+            console.error('Income creation error:', error);
+            return res.status(500).json({
+                error: 'Failed to create income',
+                details: error.message || 'Unknown error',
+                code: error.code || null
+            });
         }
     } else {
         res.setHeader('Allow', ['GET', 'POST']);
