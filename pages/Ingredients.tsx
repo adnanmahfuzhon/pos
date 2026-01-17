@@ -318,29 +318,44 @@ export default function Ingredients() {
         </div>
       </div>
 
-      {/* Status Summary Cards */}
+      {/* Status Summary Cards - Clickable Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-6">
+        <button
+          onClick={() => setFilterStatus(filterStatus === 'Kritis' ? 'All' : 'Kritis')}
+          className={`bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border shadow-sm flex items-center gap-6 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 text-left ${filterStatus === 'Kritis' ? 'border-red-500 ring-4 ring-red-500/20' : 'border-slate-100 dark:border-slate-800'
+            }`}
+        >
           <div className="p-4 bg-red-50 text-red-500 rounded-2xl border border-red-100"><AlertTriangle className="w-8 h-8" /></div>
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Bahan Kritis</p>
             <p className="text-3xl font-black text-slate-900 dark:text-white">{stats.Kritis}</p>
+            {filterStatus === 'Kritis' && <p className="text-[8px] font-black text-red-500 uppercase mt-1">✓ Filter Aktif</p>}
           </div>
-        </div>
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-6">
+        </button>
+        <button
+          onClick={() => setFilterStatus(filterStatus === 'Menipis' ? 'All' : 'Menipis')}
+          className={`bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border shadow-sm flex items-center gap-6 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 text-left ${filterStatus === 'Menipis' ? 'border-orange-500 ring-4 ring-orange-500/20' : 'border-slate-100 dark:border-slate-800'
+            }`}
+        >
           <div className="p-4 bg-orange-50 text-orange-500 rounded-2xl border border-orange-100"><Info className="w-8 h-8" /></div>
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Stok Menipis</p>
             <p className="text-3xl font-black text-slate-900 dark:text-white">{stats.Menipis}</p>
+            {filterStatus === 'Menipis' && <p className="text-[8px] font-black text-orange-500 uppercase mt-1">✓ Filter Aktif</p>}
           </div>
-        </div>
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-6">
+        </button>
+        <button
+          onClick={() => setFilterStatus(filterStatus === 'Stabil' ? 'All' : 'Stabil')}
+          className={`bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border shadow-sm flex items-center gap-6 transition-all hover:shadow-lg hover:-translate-y-1 active:scale-95 text-left ${filterStatus === 'Stabil' ? 'border-green-500 ring-4 ring-green-500/20' : 'border-slate-100 dark:border-slate-800'
+            }`}
+        >
           <div className="p-4 bg-green-50 text-green-500 rounded-2xl border border-green-100"><CheckCircle2 className="w-8 h-8" /></div>
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Stok Stabil</p>
             <p className="text-3xl font-black text-slate-900 dark:text-white">{stats.Stabil}</p>
+            {filterStatus === 'Stabil' && <p className="text-[8px] font-black text-green-500 uppercase mt-1">✓ Filter Aktif</p>}
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
