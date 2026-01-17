@@ -25,6 +25,8 @@ import {
 } from '../store';
 import { Product, Ingredient, Sale, PaymentMethod, SalesChannel } from '../types';
 import SkeletonPOS from '../components/SkeletonPOS';
+import { useToast } from '../context/ToastContext';
+import { Loader2 } from 'lucide-react';
 
 export default function POS() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -38,6 +40,7 @@ export default function POS() {
   const [stockWarning, setStockWarning] = useState<string | null>(null);
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { showToast } = useToast();
 
   useEffect(() => {
     setIsLoading(true);
@@ -143,6 +146,7 @@ export default function POS() {
   const handleCheckout = async () => {
     if (!isCartValid || isProcessing) return;
     setIsProcessing(true);
+    showToast('Memproses transaksi...', 'loading');
 
     // Backend handles stock stock reduction!
     let totalHPP = 0;
@@ -173,14 +177,15 @@ export default function POS() {
       const updatedIngredients = await getIngredients();
       setIngredients(updatedIngredients);
 
+      showToast('Transaksi Berhasil!', 'success');
       setCart([]);
-      setIsProcessing(false);
       setIsMobileCartOpen(false);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (e) {
       console.error("Checkout failed", e);
-      alert("Gagal memproses pesanan");
+      showToast('Gagal memproses pesanan', 'error');
+    } finally {
       setIsProcessing(false);
     }
   };

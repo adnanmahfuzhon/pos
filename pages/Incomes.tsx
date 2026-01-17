@@ -5,8 +5,9 @@ import { getIncomes, createIncome, updateIncome, deleteIncome, getSales, updateS
 import { Income, IncomeCategory, Sale, Product, SaleDetail, Ingredient } from '../types';
 
 import DateFilter from '../components/DateFilter';
-import { Edit2, Minus } from 'lucide-react';
+import { Edit2, Minus, Loader2 } from 'lucide-react';
 import SkeletonTransactions from '../components/SkeletonTransactions';
+import { useToast } from '../context/ToastContext';
 
 export default function Incomes() {
   const [incomes, setIncomes] = useState<Income[]>([]);
@@ -20,6 +21,8 @@ export default function Incomes() {
   const [editingItem, setEditingItem] = useState<{ id: string, type: 'Manual' | 'POS' } | null>(null);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const { showToast } = useToast();
 
   // Date filter states
   const today = (() => {
@@ -59,36 +62,36 @@ export default function Incomes() {
 
     const timestamp = new Date(`${customDate}T12:00:00`).getTime();
 
-    if (editingItem && editingItem.type === 'Manual') {
-      try {
+    setIsSaving(true);
+    showToast(editingItem ? 'Memperbarui pemasukan...' : 'Menyimpan pemasukan...', 'loading');
+
+    try {
+      if (editingItem && editingItem.type === 'Manual') {
         const updated = await updateIncome(editingItem.id, { category, sourceName, amount, timestamp });
         setIncomes(incomes.map(i => i.id === updated.id ? updated : i));
+        showToast('Pemasukan berhasil diperbarui', 'success');
         setIsModalOpen(false);
         setEditingItem(null);
         resetForm();
-      } catch (e) {
-        console.error("Failed to update income", e);
-        alert("Gagal mengupdate pemasukan");
+      } else {
+        const newIncome: Income = {
+          id: `INC-${Date.now()}`,
+          timestamp,
+          category,
+          sourceName,
+          amount
+        };
+        const created = await createIncome(newIncome);
+        setIncomes([created, ...incomes]);
+        showToast('Pemasukan berhasil ditambahkan', 'success');
+        setIsModalOpen(false);
+        resetForm();
       }
-      return;
-    }
-
-    const newIncome: Income = {
-      id: `INC-${Date.now()}`,
-      timestamp,
-      category,
-      sourceName,
-      amount
-    };
-
-    try {
-      const created = await createIncome(newIncome);
-      setIncomes([created, ...incomes]);
-      setIsModalOpen(false);
-      resetForm();
     } catch (e) {
       console.error("Failed to save income", e);
-      alert("Gagal menyimpan pemasukan");
+      showToast('Gagal menyimpan pemasukan', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -122,6 +125,9 @@ export default function Incomes() {
       totalHPP += (detail.hppAtSale * detail.quantity);
     });
 
+    setIsSaving(true);
+    showToast('Memperbarui transaksi...', 'loading');
+
     try {
       const updated = await updateSale(selectedSale.id, {
         ...selectedSale,
@@ -131,17 +137,22 @@ export default function Incomes() {
       });
 
       setSales(sales.map(s => s.id === updated.id ? updated : s));
+      showToast('Transaksi berhasil diperbarui', 'success');
       setIsEditSaleModalOpen(false);
       setSelectedSale(null);
       setEditingItem(null);
     } catch (e) {
       console.error("Failed to update sale", e);
-      alert("Gagal mengupdate transaksi");
+      showToast('Gagal mengupdate transaksi', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const deleteItem = async (id: string, type: 'Manual' | 'POS') => {
     if (confirm(`Hapus catatan ${type === 'POS' ? 'transaksi kasir' : 'pemasukan'} ini?`)) {
+      setIsSaving(true);
+      showToast('Menghapus data...', 'loading');
       try {
         if (type === 'Manual') {
           await deleteIncome(id);
@@ -150,9 +161,12 @@ export default function Incomes() {
           await deleteSale(id);
           setSales(sales.filter(s => s.id !== id));
         }
+        showToast('Data berhasil dihapus', 'success');
       } catch (e) {
         console.error("Failed to delete item", e);
-        alert("Gagal menghapus data");
+        showToast('Gagal menghapus data', 'error');
+      } finally {
+        setIsSaving(false);
       }
     }
   };

@@ -6,6 +6,8 @@ import { Expense, Ingredient, ExpenseCategory, PriceRecord } from '../types';
 
 import DateFilter from '../components/DateFilter';
 import SkeletonTransactions from '../components/SkeletonTransactions';
+import { useToast } from '../context/ToastContext';
+import { Loader2, Save } from 'lucide-react';
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -13,6 +15,8 @@ export default function Expenses() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const { showToast } = useToast();
 
   // Date filter states
   const today = (() => {
@@ -32,6 +36,8 @@ export default function Expenses() {
   const [linkedIngredientId, setLinkedIngredientId] = useState('');
   const [quantity, setQuantity] = useState(0);
   const [customDate, setCustomDate] = useState(today);
+  const [ingSearch, setIngSearch] = useState('');
+  const [showIngDropdown, setShowIngDropdown] = useState(false);
 
   // FIX: Define derived values for HPP preview in the modal
   const targetIng = useMemo(() => ingredients.find(i => i.id === linkedIngredientId), [ingredients, linkedIngredientId]);
@@ -68,6 +74,9 @@ export default function Expenses() {
       quantity: category === 'Bahan' ? quantity : undefined,
     };
 
+    setIsSaving(true);
+    const tid = showToast('Menyimpan pengeluaran...', 'loading');
+
     try {
       const created = await createExpense(newExpense);
       setExpenses([created, ...expenses]);
@@ -78,25 +87,10 @@ export default function Expenses() {
 
         if (ing) {
           const hasPriceChanged = Math.abs(ing.pricePerUnit - unitPriceFromExpense) > 0.01;
-          const newHistory: PriceRecord[] = [...(ing.priceHistory || [])];
-
-          if (hasPriceChanged) {
-            newHistory.push({ timestamp: Date.now(), price: unitPriceFromExpense });
-          }
-
           const updatedIngData = {
             stock: ing.stock + quantity,
             pricePerUnit: hasPriceChanged ? unitPriceFromExpense : ing.pricePerUnit,
-            // history update via API might differ depending on backend impl, 
-            // but assuming simple update matches my store shim
           };
-
-          // Note: My backend PUT update accepts the data spread. I need to send priceHistory if I supported it in backend.
-          // My backend currently ignores priceHistory update in PUT /ingredients/:id?
-          // "const { priceHistory, recipe, ...data } = req.body; // Exclude relation fields if sent"
-          // Wait, I excluded priceHistory in backend! So price history won't update.
-          // I should fix backend if price history is important.
-          // For now, I'll update stock and pricePerUnit.
 
           await updateIngredient(ing.id, updatedIngData);
 
@@ -106,22 +100,31 @@ export default function Expenses() {
         }
       }
 
+      showToast('Pengeluaran berhasil disimpan', 'success');
       setIsModalOpen(false);
       resetForm();
     } catch (e) {
       console.error("Failed to save expense", e);
-      alert("Gagal menyimpan pengeluaran");
+      showToast('Gagal menyimpan pengeluaran', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const deleteExpenseFn = async (id: string) => {
     if (confirm('Hapus catatan pengeluaran ini? Tindakan ini tidak akan mengembalikan stok bahan yang sudah terinput.')) {
+      setIsSaving(true);
+      showToast('Menghapus pengeluaran...', 'loading');
       try {
         await deleteExpense(id);
-        setExpenses(expenses.filter(e => e.id !== id));
+        const refreshedExpenses = await getExpenses();
+        setExpenses(refreshedExpenses);
+        showToast('Data berhasil dihapus', 'success');
       } catch (e) {
         console.error("Failed to delete expense", e);
-        alert("Gagal menghapus pengeluaran");
+        showToast('Gagal menghapus pengeluaran', 'error');
+      } finally {
+        setIsSaving(false);
       }
     }
   };
@@ -287,16 +290,53 @@ export default function Expenses() {
                 <>
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Pilih Bahan (Mentah/Kemasan)</label>
-                    <select
-                      value={linkedIngredientId}
-                      onChange={e => setLinkedIngredientId(e.target.value)}
-                      className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-black text-slate-900 dark:text-white appearance-none"
-                    >
-                      <option value="">-- Pilih Bahan --</option>
-                      {ingredients.filter(ing => ing.type === 'Raw' || ing.type === 'Packaging').map(ing => (
-                        <option key={ing.id} value={ing.id}>{ing.name.toUpperCase()} ({ing.unit})</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowIngDropdown(!showIngDropdown)}
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-black text-slate-900 dark:text-white flex justify-between items-center"
+                      >
+                        <span className="truncate">{targetIng ? `${targetIng.name.toUpperCase()} (${targetIng.unit})` : '-- PILIH BAHAN --'}</span>
+                        <ChevronDown className={`w-4 h-4 transition-transform ${showIngDropdown ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {showIngDropdown && (
+                        <div className="absolute left-0 right-0 mt-3 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 z-[120] p-4 animate-in zoom-in duration-200">
+                          <div className="mb-3 relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input
+                              type="text"
+                              placeholder="Cari bahan..."
+                              value={ingSearch}
+                              onChange={e => setIngSearch(e.target.value)}
+                              autoFocus
+                              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-[10px] font-black uppercase tracking-tight"
+                            />
+                          </div>
+                          <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-1">
+                            {ingredients
+                              .filter(ing => (ing.type === 'Raw' || ing.type === 'Packaging') && ing.name.toLowerCase().includes(ingSearch.toLowerCase()))
+                              .map(ing => (
+                                <button
+                                  key={ing.id}
+                                  onClick={() => {
+                                    setLinkedIngredientId(ing.id);
+                                    setItemName(ing.name);
+                                    setIngSearch('');
+                                    setShowIngDropdown(false);
+                                  }}
+                                  className={`w-full flex items-center justify-between p-4 rounded-xl text-left transition-all ${linkedIngredientId === ing.id ? 'bg-orange-500 text-white' : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-white'}`}
+                                >
+                                  <span className="text-[10px] font-black uppercase">{ing.name}</span>
+                                  <span className={`text-[8px] font-bold ${linkedIngredientId === ing.id ? 'text-white/70' : 'opacity-60'}`}>{ing.unit}</span>
+                                </button>
+                              ))}
+                            {ingredients.filter(ing => (ing.type === 'Raw' || ing.type === 'Packaging') && ing.name.toLowerCase().includes(ingSearch.toLowerCase())).length === 0 && (
+                              <p className="text-center py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">Tidak ditemukan</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -388,10 +428,11 @@ export default function Expenses() {
               </button>
               <button
                 onClick={handleSave}
-                className="flex-[2] py-5 bg-red-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-2xl shadow-red-500/20 flex items-center justify-center gap-3 hover:bg-red-600 transition-all active:scale-95"
+                disabled={isSaving}
+                className="flex-[2] py-5 bg-red-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-2xl shadow-red-500/20 flex items-center justify-center gap-3 hover:bg-red-600 transition-all active:scale-95 disabled:opacity-50"
               >
-                <CheckCircle2 className="w-5 h-5" />
-                Simpan & Update HPP
+                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                {isSaving ? 'MEMPROSES...' : 'Simpan & Update HPP'}
               </button>
             </div>
           </div>

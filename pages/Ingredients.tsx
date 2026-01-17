@@ -21,6 +21,8 @@ import {
 import { getIngredients, createIngredient, updateIngredient, deleteIngredient, produceIngredient } from '../store';
 import { Ingredient, IngredientType, ProductIngredient } from '../types';
 import SkeletonIngredients from '../components/SkeletonIngredients';
+import { useToast } from '../context/ToastContext';
+import { Loader2 } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -38,6 +40,8 @@ export default function Ingredients() {
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
   const [selectedIngForDetail, setSelectedIngForDetail] = useState<Ingredient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const { showToast } = useToast();
 
   // Filter states
   const [filterType, setFilterType] = useState<string>('All');
@@ -64,6 +68,7 @@ export default function Ingredients() {
   const [showIngDropdown, setShowIngDropdown] = useState(false);
   const [isAutoCalc, setIsAutoCalc] = useState(true);
   const [batchHelper, setBatchHelper] = useState<{ id: string, rawQty: number, yieldQty: number } | null>(null);
+  const [ingSearch, setIngSearch] = useState('');
 
   useEffect(() => {
     setIsLoading(true);
@@ -151,19 +156,26 @@ export default function Ingredients() {
       priceHistory: newHistory
     };
 
+    setIsSaving(true);
+    showToast(editingIngredient ? 'Memperbarui bahan...' : 'Menyimpan bahan...', 'loading');
+
     try {
       if (editingIngredient) {
         const updated = await updateIngredient(ingredientData.id, ingredientData);
         setIngredients(ingredients.map(i => i.id === updated.id ? updated : i));
+        showToast('Bahan berhasil diperbarui', 'success');
       } else {
         const created = await createIngredient(ingredientData);
         setIngredients([...ingredients, created]);
+        showToast('Bahan berhasil ditambahkan', 'success');
       }
       setIsModalOpen(false);
       resetForm();
     } catch (e) {
       console.error("Failed to save ingredient", e);
-      alert("Gagal menyimpan bahan");
+      showToast('Gagal menyimpan bahan', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -184,6 +196,9 @@ export default function Ingredients() {
     const targetIng = ingredients.find(i => i.id === selectedIngId);
     if (!targetIng || scanQty <= 0) return;
 
+    setIsSaving(true);
+    showToast('Memproses update stok...', 'loading');
+
     try {
       if (targetIng.type === 'Processed' || targetIng.type === 'Mix') {
         // Use atomic production API
@@ -197,6 +212,7 @@ export default function Ingredients() {
       const refreshed = await getIngredients();
       setIngredients(refreshed);
 
+      showToast(`Berhasil: ${targetIng.name} +${scanQty}`, 'success');
       setScanResult(`Berhasil: ${targetIng.name} +${scanQty}`);
       setScanQty(0);
       setTimeout(() => {
@@ -206,7 +222,9 @@ export default function Ingredients() {
       }, 1500);
     } catch (e: any) {
       console.error(e);
-      alert(e.message || "Gagal update stok");
+      showToast(e.message || "Gagal update stok", 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -619,22 +637,27 @@ export default function Ingredients() {
                         <span className="text-[10px] font-black text-orange-600 uppercase">{selectedIngForDetail.unit}</span>
                       </div>
                       <button
+                        disabled={isSaving}
                         onClick={async () => {
                           if (scanQty <= 0) return;
+                          setIsSaving(true);
+                          const tid = showToast('Memproses produksi...', 'loading');
                           try {
                             await produceIngredient(selectedIngForDetail.id, scanQty);
                             const refreshed = await getIngredients();
                             setIngredients(refreshed);
                             setSelectedIngForDetail(refreshed.find(i => i.id === selectedIngForDetail.id) || null);
                             setScanQty(0);
-                            alert("Produksi Berhasil!");
+                            showToast('Produksi Berhasil!', 'success');
                           } catch (e: any) {
-                            alert(e.message || "Gagal memproses produksi");
+                            showToast(e.message || "Gagal memproses produksi", 'error');
+                          } finally {
+                            setIsSaving(false);
                           }
                         }}
-                        className="bg-orange-500 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all active:scale-95 shadow-lg shadow-orange-500/20"
+                        className="bg-orange-500 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all active:scale-95 shadow-lg shadow-orange-500/20 disabled:opacity-50"
                       >
-                        PROSES PRODUKSI
+                        {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'PROSES PRODUKSI'}
                       </button>
                     </div>
                   </div>
@@ -759,7 +782,7 @@ export default function Ingredients() {
             <div className="p-10 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
               <button
                 onClick={handleQuickStockUpdate}
-                disabled={!selectedIngId || scanQty <= 0 || (() => {
+                disabled={isSaving || !selectedIngId || scanQty <= 0 || (() => {
                   const target = ingredients.find(i => i.id === selectedIngId);
                   if (!target?.recipe || !Array.isArray(target.recipe)) return true;
                   return target.recipe.some((r: any) => {
@@ -769,7 +792,8 @@ export default function Ingredients() {
                 })()}
                 className="w-full py-7 bg-orange-500 text-white rounded-[2.5rem] font-black uppercase text-sm tracking-[0.2em] shadow-2xl hover:bg-orange-600 transition-all disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed flex items-center justify-center gap-4 active:scale-95 shadow-orange-500/30"
               >
-                <Save className="w-6 h-6" /> Konfirmasi & Proses Produksi
+                {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
+                {isSaving ? 'MEMPROSES...' : 'Konfirmasi & Proses Produksi'}
               </button>
             </div>
           </div>
@@ -850,10 +874,11 @@ export default function Ingredients() {
 
               <button
                 onClick={handleQuickStockUpdate}
-                disabled={!selectedIngId || scanQty <= 0}
+                disabled={isSaving || !selectedIngId || scanQty <= 0}
                 className="w-full py-6 bg-slate-950 dark:bg-orange-500 text-white rounded-[2.5rem] font-black uppercase text-xs tracking-widest shadow-2xl hover:bg-black dark:hover:bg-orange-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 active:scale-95 shadow-orange-500/20"
               >
-                <Save className="w-4 h-4" /> Simpan Update Stok
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {isSaving ? 'MEMPROSES...' : 'Simpan Update Stok'}
               </button>
             </div>
           </div>
@@ -946,13 +971,36 @@ export default function Ingredients() {
                         <button onClick={() => setShowIngDropdown(!showIngDropdown)} className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-orange-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg">Pilih Bahan Baku <ChevronDown className="w-3 h-3" /></button>
                         {showIngDropdown && (
                           <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 z-[110] p-3">
+                            <div className="mb-3 relative">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                              <input
+                                type="text"
+                                placeholder="Cari bahan..."
+                                value={ingSearch}
+                                onChange={e => setIngSearch(e.target.value)}
+                                autoFocus
+                                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-[10px] font-black uppercase tracking-tight"
+                              />
+                            </div>
                             <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-1">
-                              {ingredients.filter(i => (i.type === 'Raw' || i.type === 'Packaging') && i.id !== editingIngredient?.id).map(ing => (
-                                <button key={ing.id} onClick={() => addIngredientToRecipe(ing.id)} className="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 hover:bg-orange-500 hover:text-white rounded-xl text-left transition-all">
-                                  <span className="text-[10px] font-black uppercase">{ing.name}</span>
-                                  <span className="text-[8px] font-bold opacity-60">{ing.unit}</span>
-                                </button>
-                              ))}
+                              {ingredients
+                                .filter(i => (i.type === 'Raw' || i.type === 'Packaging') && i.id !== editingIngredient?.id && i.name.toLowerCase().includes(ingSearch.toLowerCase()))
+                                .map(ing => (
+                                  <button
+                                    key={ing.id}
+                                    onClick={() => {
+                                      addIngredientToRecipe(ing.id);
+                                      setIngSearch('');
+                                    }}
+                                    className="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 hover:bg-orange-500 hover:text-white rounded-xl text-left transition-all"
+                                  >
+                                    <span className="text-[10px] font-black uppercase">{ing.name}</span>
+                                    <span className="text-[8px] font-bold opacity-60">{ing.unit}</span>
+                                  </button>
+                                ))}
+                              {ingredients.filter(i => (i.type === 'Raw' || i.type === 'Packaging') && i.id !== editingIngredient?.id && i.name.toLowerCase().includes(ingSearch.toLowerCase())).length === 0 && (
+                                <p className="text-center py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">Tidak ditemukan</p>
+                              )}
                             </div>
                           </div>
                         )}
@@ -1050,8 +1098,13 @@ export default function Ingredients() {
 
             <div className="p-10 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex gap-6">
               <button onClick={() => setIsModalOpen(false)} className="flex-1 py-5 text-slate-500 font-black text-[10px] uppercase bg-white dark:bg-slate-900 border border-slate-200 rounded-2xl transition-colors hover:bg-slate-50">Batal</button>
-              <button onClick={handleSave} className="flex-[2] py-5 bg-slate-950 dark:bg-orange-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-2xl hover:bg-black transition-all flex items-center justify-center gap-3 active:scale-95 shadow-orange-500/20">
-                <CheckCircle2 className="w-5 h-5" /> Simpan Konfigurasi
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex-[2] py-5 bg-slate-950 dark:bg-orange-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-2xl hover:bg-black transition-all flex items-center justify-center gap-3 active:scale-95 shadow-orange-500/20 disabled:opacity-50"
+              >
+                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                {isSaving ? 'MEMPROSES...' : 'Simpan Konfigurasi'}
               </button>
             </div>
           </div>

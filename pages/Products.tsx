@@ -4,6 +4,8 @@ import { Plus, Coffee, Search, Trash2, Edit2, X, Save, ShieldCheck, ChevronDown,
 import { getProducts, getIngredients, createProduct, updateProduct, deleteProduct, calculateHPP } from '../store';
 import { Product, Ingredient, ProductIngredient, SalesChannel } from '../types';
 import SkeletonProducts from '../components/SkeletonProducts';
+import { useToast } from '../context/ToastContext';
+import { Loader2 } from 'lucide-react';
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -12,6 +14,8 @@ export default function Products() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const { showToast } = useToast();
 
   // Form states
   const [name, setName] = useState('');
@@ -26,6 +30,7 @@ export default function Products() {
   const [imageUrl, setImageUrl] = useState('');
   const [recipe, setRecipe] = useState<ProductIngredient[]>([]);
   const [showIngDropdown, setShowIngDropdown] = useState(false);
+  const [ingSearch, setIngSearch] = useState('');
 
   useEffect(() => {
     setIsLoading(true);
@@ -88,18 +93,25 @@ export default function Products() {
       ingredients: recipe
     };
 
+    setIsSaving(true);
+    const toastId = showToast(editingProduct ? 'Memperbarui menu...' : 'Menyimpan menu...', 'loading');
+
     try {
       if (editingProduct) {
         const updated = await updateProduct(newProduct.id, newProduct);
         setProducts(products.map(p => p.id === updated.id ? updated : p));
+        showToast('Menu berhasil diperbarui', 'success');
       } else {
         const created = await createProduct(newProduct);
         setProducts([...products, created]);
+        showToast('Menu berhasil ditambahkan', 'success');
       }
       setIsModalOpen(false);
     } catch (e) {
       console.error("Failed to save product", e);
-      alert("Gagal menyimpan produk");
+      showToast('Gagal menyimpan menu', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -409,17 +421,36 @@ export default function Products() {
                       </button>
                       {showIngDropdown && (
                         <div className="absolute right-0 mt-3 w-72 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 z-[110] p-4 animate-in zoom-in duration-200">
+                          <div className="mb-3 relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                            <input
+                              type="text"
+                              placeholder="Cari bahan..."
+                              value={ingSearch}
+                              onChange={e => setIngSearch(e.target.value)}
+                              autoFocus
+                              className="w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-[10px] font-black uppercase tracking-tight"
+                            />
+                          </div>
                           <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-2">
-                            {ingredients.map(ing => (
-                              <button
-                                key={ing.id}
-                                onClick={() => addIngredientToRecipe(ing.id)}
-                                className="w-full p-4 bg-slate-50 dark:bg-slate-900 hover:bg-orange-500 hover:text-white rounded-xl text-left transition-all"
-                              >
-                                <p className="text-[10px] font-black uppercase tracking-tight">{ing.name}</p>
-                                <p className="text-[8px] font-bold opacity-60 mt-1 uppercase">{ing.unit} | {formatCurrency(ing.pricePerUnit)}</p>
-                              </button>
-                            ))}
+                            {ingredients
+                              .filter(ing => ing.name.toLowerCase().includes(ingSearch.toLowerCase()))
+                              .map(ing => (
+                                <button
+                                  key={ing.id}
+                                  onClick={() => {
+                                    addIngredientToRecipe(ing.id);
+                                    setIngSearch('');
+                                  }}
+                                  className="w-full p-4 bg-slate-50 dark:bg-slate-900 hover:bg-orange-500 hover:text-white rounded-xl text-left transition-all"
+                                >
+                                  <p className="text-[10px] font-black uppercase tracking-tight">{ing.name}</p>
+                                  <p className="text-[8px] font-bold opacity-60 mt-1 uppercase">{ing.unit} | {formatCurrency(ing.pricePerUnit)}</p>
+                                </button>
+                              ))}
+                            {ingredients.filter(ing => ing.name.toLowerCase().includes(ingSearch.toLowerCase())).length === 0 && (
+                              <p className="text-center py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">Tidak ditemukan</p>
+                            )}
                           </div>
                         </div>
                       )}
@@ -463,8 +494,13 @@ export default function Products() {
 
             <div className="p-10 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex gap-6">
               <button onClick={() => setIsModalOpen(false)} className="flex-1 py-6 bg-white dark:bg-slate-900 text-slate-400 font-black text-[11px] uppercase rounded-[2rem] border">Batal</button>
-              <button onClick={handleSave} className="flex-[2] py-6 bg-orange-500 text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-[2rem] shadow-2xl flex items-center justify-center gap-4">
-                <Save className="w-6 h-6" /> Simpan Menu
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex-[2] py-6 bg-orange-500 text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-[2rem] shadow-2xl flex items-center justify-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
+                {isSaving ? 'Memproses...' : 'Simpan Menu'}
               </button>
             </div>
           </div>
