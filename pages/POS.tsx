@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   X,
   ChevronRight,
+  ChevronDown,
   ReceiptText,
   PackageX,
   Globe
@@ -39,6 +40,7 @@ export default function POS() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [stockWarning, setStockWarning] = useState<string | null>(null);
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const { showToast, updateToast } = useToast();
 
@@ -64,6 +66,35 @@ export default function POS() {
   const filteredProducts = useMemo(() => {
     return products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
   }, [products, search]);
+
+  // Group products by category
+  const categorizedProducts = useMemo(() => {
+    const groups: Record<string, Product[]> = {};
+    filteredProducts.forEach(p => {
+      if (!groups[p.category]) groups[p.category] = [];
+      groups[p.category].push(p);
+    });
+    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [filteredProducts]);
+
+  // Auto-expand all categories when search is active
+  useEffect(() => {
+    if (search) {
+      setExpandedCategories(new Set(categorizedProducts.map(([cat]) => cat)));
+    }
+  }, [search, categorizedProducts]);
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
+  };
 
   const getProductPrice = (product: Product) => {
     if (product.channelPrices && product.channelPrices[salesChannel]) {
@@ -245,69 +276,93 @@ export default function POS() {
           </div>
         )}
 
-        {/* Product Grid View */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-6 pb-24">
-          {filteredProducts.map(product => {
-            const isOut = product.ingredients.some(pi => {
-              const ing = ingredients.find(i => i.id === pi.ingredientId);
-              return ing && ing.stock < pi.quantity;
-            });
-            const currentPrice = getProductPrice(product);
+        {/* Product Grid View - Grouped by Category */}
+        <div className="space-y-4 pb-24">
+          {categorizedProducts.map(([category, categoryProducts]) => {
+            const isExpanded = expandedCategories.has(category);
 
             return (
-              <div
-                key={product.id}
-                onClick={() => !isOut && addToCart(product)}
-                className={`
-                  relative group flex flex-col bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 
-                  transition-all duration-300 overflow-hidden cursor-pointer shadow-sm hover:shadow-2xl hover:-translate-y-1 hover:border-orange-500/50
-                  ${isOut ? 'opacity-60 grayscale cursor-not-allowed' : 'active:scale-95'}
-                `}
-              >
-                <div className="aspect-square w-full bg-slate-50 dark:bg-slate-800 relative overflow-hidden shrink-0">
-                  {product.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Coffee className="w-8 h-8 md:w-12 md:h-12 text-slate-200 dark:text-slate-700 group-hover:text-orange-500/20 transition-colors" />
-                    </div>
-                  )}
-                  <div className="absolute top-2 left-2 md:top-4 md:left-4">
-                    <span className="px-2 py-0.5 md:px-3 md:py-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-full text-[7px] md:text-[8px] font-black text-slate-900 dark:text-white uppercase tracking-widest border border-white/20 dark:border-slate-800">
-                      {product.category}
+              <div key={category} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+                {/* Category Header - Accordion Toggle */}
+                <button
+                  onClick={() => toggleCategory(category)}
+                  className="w-full flex items-center justify-between p-4 md:p-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="px-3 py-1.5 bg-orange-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">
+                      {category}
+                    </span>
+                    <span className="text-xs font-bold text-slate-400">
+                      {categoryProducts.length} item
                     </span>
                   </div>
-                  {isOut && (
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-white">
-                      <PackageX className="w-6 h-6 md:w-8 md:h-8 mb-1 md:mb-2 opacity-80" />
-                      <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Stok Habis</span>
-                    </div>
-                  )}
-                </div>
+                  <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                </button>
 
-                <div className="p-3 md:p-5 flex flex-col flex-1 gap-2 md:gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-[11px] md:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight leading-snug line-clamp-2">
-                      {product.name}
-                    </h3>
-                  </div>
-                  <div className="flex items-center justify-between mt-auto">
-                    <div>
-                      <p className="text-xs md:text-base font-black text-slate-900 dark:text-white tracking-tighter">
-                        {formatCurrency(currentPrice)}
-                      </p>
-                      {salesChannel !== 'Offline' && (
-                        <p className="text-[7px] md:text-[8px] font-bold text-slate-400 line-through">
-                          {formatCurrency(product.price)}
-                        </p>
-                      )}
-                    </div>
-                    <div className={`
-                      w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl flex items-center justify-center transition-all shadow-sm
-                      ${isOut ? 'bg-slate-100 dark:bg-slate-800 text-slate-300' : 'bg-slate-50 dark:bg-slate-800 text-orange-500 group-hover:bg-orange-500 group-hover:text-white'}
-                    `}>
-                      <Plus className="w-4 h-4 md:w-5 md:h-5" />
-                    </div>
+                {/* Category Products Grid */}
+                <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-6 p-4 md:p-6 pt-0">
+                    {categoryProducts.map(product => {
+                      const isOut = product.ingredients.some(pi => {
+                        const ing = ingredients.find(i => i.id === pi.ingredientId);
+                        return ing && ing.stock < pi.quantity;
+                      });
+                      const currentPrice = getProductPrice(product);
+
+                      return (
+                        <div
+                          key={product.id}
+                          onClick={() => !isOut && addToCart(product)}
+                          className={`
+                            relative group flex flex-col bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 
+                            transition-all duration-300 overflow-hidden cursor-pointer shadow-sm hover:shadow-2xl hover:-translate-y-1 hover:border-orange-500/50
+                            ${isOut ? 'opacity-60 grayscale cursor-not-allowed' : 'active:scale-95'}
+                          `}
+                        >
+                          <div className="aspect-square w-full bg-slate-50 dark:bg-slate-800 relative overflow-hidden shrink-0">
+                            {product.imageUrl ? (
+                              <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Coffee className="w-8 h-8 md:w-12 md:h-12 text-slate-200 dark:text-slate-700 group-hover:text-orange-500/20 transition-colors" />
+                              </div>
+                            )}
+                            {isOut && (
+                              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-white">
+                                <PackageX className="w-6 h-6 md:w-8 md:h-8 mb-1 md:mb-2 opacity-80" />
+                                <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Stok Habis</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="p-3 md:p-5 flex flex-col flex-1 gap-2 md:gap-4">
+                            <div className="flex-1">
+                              <h3 className="text-[11px] md:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight leading-snug line-clamp-2">
+                                {product.name}
+                              </h3>
+                            </div>
+                            <div className="flex items-center justify-between mt-auto">
+                              <div>
+                                <p className="text-xs md:text-base font-black text-slate-900 dark:text-white tracking-tighter">
+                                  {formatCurrency(currentPrice)}
+                                </p>
+                                {salesChannel !== 'Offline' && (
+                                  <p className="text-[7px] md:text-[8px] font-bold text-slate-400 line-through">
+                                    {formatCurrency(product.price)}
+                                  </p>
+                                )}
+                              </div>
+                              <div className={`
+                                w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl flex items-center justify-center transition-all shadow-sm
+                                ${isOut ? 'bg-slate-100 dark:bg-slate-800 text-slate-300' : 'bg-slate-50 dark:bg-slate-800 text-orange-500 group-hover:bg-orange-500 group-hover:text-white'}
+                              `}>
+                                <Plus className="w-4 h-4 md:w-5 md:h-5" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
