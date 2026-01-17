@@ -8,8 +8,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } else if (req.method === 'POST') {
         try {
             const { id, branchId, ...data } = req.body;
+            const targetBranchId = branchId || 'default';
+
+            // Ensure branch exists
+            await prisma.branch.upsert({
+                where: { id: targetBranchId },
+                update: {},
+                create: { id: targetBranchId, name: 'Default Branch' }
+            });
+
             const income = await prisma.income.create({
-                data: { id, ...data, branchId: branchId || 'default' }
+                data: { id, ...data, branchId: targetBranchId }
             });
             return res.status(200).json(income);
         } catch (error: any) {

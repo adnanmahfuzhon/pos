@@ -54,6 +54,7 @@ model Sale {
   channel       String
   branchId      String   @default("default")
   
+  branch        Branch   @relation(fields: [branchId], references: [id])
   details       SaleDetail[]
 }
 
@@ -77,6 +78,8 @@ model Expense {
   linkedIngredientId String?
   quantity           Float?
   branchId           String  @default("default")
+  
+  branch             Branch  @relation(fields: [branchId], references: [id])
 }
 
 model Income {
@@ -86,4 +89,16 @@ model Income {
   sourceName String
   amount     Float
   branchId   String @default("default")
+  
+  branch     Branch @relation(fields: [branchId], references: [id])
+}
+
+model Branch {
+  id       String    @id @default(uuid())
+  name     String
+  address  String?
+  
+  sales    Sale[]
+  expenses Expense[]
+  incomes  Income[]
 }

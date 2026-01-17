@@ -10,11 +10,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } else if (req.method === 'POST') {
         try {
             const { id, details, branchId, ...data } = req.body;
+            const targetBranchId = branchId || 'default';
+
+            // Ensure branch exists
+            await prisma.branch.upsert({
+                where: { id: targetBranchId },
+                update: {},
+                create: { id: targetBranchId, name: 'Default Branch' }
+            });
+
             const sale = await prisma.sale.create({
                 data: {
                     id,
                     ...data,
-                    branchId: branchId || 'default',
+                    branchId: targetBranchId,
                     details: {
                         create: details
                     }
