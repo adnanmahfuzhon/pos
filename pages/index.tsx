@@ -14,7 +14,15 @@ import {
   History,
   FileText,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  ShoppingCart,
+  Percent,
+  Award,
+  Store,
+  Smartphone,
+  Bike,
+  Car,
+  Globe
 } from 'lucide-react';
 import {
   BarChart,
@@ -24,7 +32,14 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell
+  Cell,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Legend,
+  AreaChart,
+  Area
 } from 'recharts';
 import {
   getSales,
@@ -44,6 +59,7 @@ export default function Dashboard() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Date Filter states
@@ -64,16 +80,18 @@ export default function Dashboard() {
   const refreshData = async () => {
     setIsLoading(true);
     try {
-      const [salesData, expensesData, incomesData, ingredientsData] = await Promise.all([
+      const [salesData, expensesData, incomesData, ingredientsData, productsData] = await Promise.all([
         getSales(),
         getExpenses(),
         getIncomes(),
-        getIngredients()
+        getIngredients(),
+        getProducts()
       ]);
       setSales(salesData);
       setExpenses(expensesData);
       setIncomes(incomesData);
       setIngredients(ingredientsData);
+      setProducts(productsData);
     } catch (error) {
       console.error("Failed to load dashboard data:", error);
     } finally {
@@ -109,7 +127,88 @@ export default function Dashboard() {
   const totalOpExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
   const estimatedProfit = totalRevenue - totalHPP - totalOpExpenses;
 
+  // Enhanced Metrics
+  const transactionCount = filteredSales.length;
+  const averageOrderValue = transactionCount > 0 ? posRevenue / transactionCount : 0;
+  const grossMargin = posRevenue > 0 ? ((posRevenue - totalHPP) / posRevenue * 100) : 0;
+
   const lowStockItems = ingredients.filter(i => i.stock <= i.minStock);
+
+  // Channel Breakdown
+  const channelData = useMemo(() => {
+    const channels: Record<string, { revenue: number; count: number }> = {
+      'Offline': { revenue: 0, count: 0 },
+      'ShopeeFood': { revenue: 0, count: 0 },
+      'GrabFood': { revenue: 0, count: 0 },
+      'GoFood': { revenue: 0, count: 0 }
+    };
+    filteredSales.forEach(s => {
+      if (channels[s.channel]) {
+        channels[s.channel].revenue += s.totalAmount;
+        channels[s.channel].count += 1;
+      }
+    });
+    return Object.entries(channels).map(([name, data]) => ({
+      name,
+      value: data.revenue,
+      count: data.count,
+      percentage: posRevenue > 0 ? (data.revenue / posRevenue * 100).toFixed(1) : '0'
+    }));
+  }, [filteredSales, posRevenue]);
+
+  // Daily Trend Data
+  const trendData = useMemo(() => {
+    const dailyData: Record<string, { revenue: number; expenses: number; profit: number }> = {};
+
+    filteredSales.forEach(s => {
+      const day = new Date(s.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+      if (!dailyData[day]) dailyData[day] = { revenue: 0, expenses: 0, profit: 0 };
+      dailyData[day].revenue += s.totalAmount;
+    });
+
+    filteredIncomes.forEach(i => {
+      const day = new Date(i.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+      if (!dailyData[day]) dailyData[day] = { revenue: 0, expenses: 0, profit: 0 };
+      dailyData[day].revenue += i.amount;
+    });
+
+    filteredExpenses.forEach(e => {
+      const day = new Date(e.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+      if (!dailyData[day]) dailyData[day] = { revenue: 0, expenses: 0, profit: 0 };
+      dailyData[day].expenses += e.amount;
+    });
+
+    return Object.entries(dailyData).map(([day, data]) => ({
+      day,
+      revenue: data.revenue,
+      expenses: data.expenses,
+      profit: data.revenue - data.expenses
+    })).sort((a, b) => a.day.localeCompare(b.day));
+  }, [filteredSales, filteredIncomes, filteredExpenses]);
+
+  // Top Products
+  const topProducts = useMemo(() => {
+    const productSales: Record<string, { name: string; qty: number; revenue: number }> = {};
+
+    filteredSales.forEach(sale => {
+      sale.details?.forEach(detail => {
+        const product = products.find(p => p.id === detail.productId);
+        if (product) {
+          if (!productSales[product.id]) {
+            productSales[product.id] = { name: product.name, qty: 0, revenue: 0 };
+          }
+          productSales[product.id].qty += detail.quantity;
+          productSales[product.id].revenue += detail.priceAtSale * detail.quantity;
+        }
+      });
+    });
+
+    return Object.values(productSales)
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 5);
+  }, [filteredSales, products]);
+
+  const maxProductQty = topProducts.length > 0 ? topProducts[0].qty : 1;
 
   // Activity Log (Combined & Chronological)
   const activityLog = useMemo(() => {
@@ -128,6 +227,20 @@ export default function Dashboard() {
     { name: 'Beban', value: totalOpExpenses, color: '#ef4444' },
     { name: 'Laba', value: Math.max(0, estimatedProfit), color: '#22c55e' }
   ];
+
+  const channelColors: Record<string, string> = {
+    'Offline': '#f97316',
+    'ShopeeFood': '#ea580c',
+    'GrabFood': '#22c55e',
+    'GoFood': '#ef4444'
+  };
+
+  const channelIcons: Record<string, any> = {
+    'Offline': Store,
+    'ShopeeFood': Smartphone,
+    'GrabFood': Bike,
+    'GoFood': Car
+  };
 
   if (isLoading) return <SkeletonDashboard />;
 
@@ -207,11 +320,19 @@ export default function Dashboard() {
         />
       </header>
 
+      {/* Primary Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard title="Pendapatan Periode" value={formatCurrency(totalRevenue)} icon={DollarSign} trend={`${startDate} - ${endDate}`} color="orange" />
         <StatCard title="Total HPP" value={formatCurrency(totalHPP)} icon={FileText} trend="Berdasarkan Produk Terjual" color="gray" />
         <StatCard title="Pengeluaran" value={formatCurrency(totalOpExpenses)} icon={TrendingDown} trend="Operasional & Bahan" color="red" />
         <StatCard title="Estimasi Laba" value={formatCurrency(estimatedProfit)} icon={TrendingUp} trend="Profit Bersih" color={estimatedProfit >= 0 ? "green" : "red"} />
+      </div>
+
+      {/* Secondary Stats Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+        <StatCard title="Total Transaksi" value={transactionCount.toString()} icon={ShoppingCart} trend="POS Transactions" color="orange" />
+        <StatCard title="Rata-rata Order" value={formatCurrency(averageOrderValue)} icon={Award} trend="Average Order Value" color="blue" />
+        <StatCard title="Gross Margin" value={`${grossMargin.toFixed(1)}%`} icon={Percent} trend="(Pendapatan - HPP) / Pendapatan" color={grossMargin >= 30 ? "green" : "orange"} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -238,6 +359,41 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Daily Trend Chart */}
+          {trendData.length > 1 && (
+            <div className="bg-white dark:bg-slate-900 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-2xl">
+                  <TrendingUp className="w-5 h-5 text-blue-500" />
+                </div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase">Trend Harian</h3>
+              </div>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trendData}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontWeight: 800, fontSize: 10 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontWeight: 800, fontSize: 10 }} />
+                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', padding: '12px' }} />
+                    <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} fill="url(#colorRevenue)" name="Pendapatan" />
+                    <Area type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} fill="url(#colorExpenses)" name="Pengeluaran" />
+                    <Legend />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
 
           {/* Activity Log Table */}
           <div className="bg-white dark:bg-slate-900 p-10 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800">
@@ -273,6 +429,81 @@ export default function Dashboard() {
 
         {/* Sidebar Status */}
         <div className="space-y-8">
+          {/* Channel Performance */}
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 bg-orange-50 dark:bg-orange-500/10 rounded-xl">
+                <Globe className="w-5 h-5 text-orange-500" />
+              </div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase">Performa Channel</h3>
+            </div>
+            <div className="space-y-3">
+              {channelData.map((channel) => {
+                const ChannelIcon = channelIcons[channel.name] || Store;
+                const channelColor = channelColors[channel.name] || '#f97316';
+                return (
+                  <div key={channel.name} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <ChannelIcon className="w-4 h-4" style={{ color: channelColor }} />
+                        <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase">{channel.name}</span>
+                      </div>
+                      <span className="text-[10px] font-black text-slate-400">{channel.count} trx</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full mr-3 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${channel.percentage}%`,
+                            backgroundColor: channelColor
+                          }}
+                        />
+                      </div>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">{channel.percentage}%</span>
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-400 mt-1">{formatCurrency(channel.value)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Top Products */}
+          {topProducts.length > 0 && (
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2.5 bg-green-50 dark:bg-green-500/10 rounded-xl">
+                  <Award className="w-5 h-5 text-green-500" />
+                </div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase">Produk Terlaris</h3>
+              </div>
+              <div className="space-y-4">
+                {topProducts.map((product, index) => (
+                  <div key={product.name} className="flex items-center gap-4">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black text-white shrink-0 ${index === 0 ? 'bg-orange-500' : index === 1 ? 'bg-slate-500' : index === 2 ? 'bg-amber-600' : 'bg-slate-300'
+                      }`}>
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-slate-900 dark:text-white uppercase truncate">{product.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-green-500 rounded-full transition-all duration-500"
+                            style={{ width: `${(product.qty / maxProductQty) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-black text-slate-400">{product.qty}x</span>
+                      </div>
+                    </div>
+                    <p className="text-xs font-black text-green-500">{formatCurrency(product.revenue)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Inventory Status Card */}
           <div className="bg-white dark:bg-slate-900 p-10 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col">
             <div className="flex items-center justify-between mb-10">
@@ -367,6 +598,7 @@ function StatCard({ title, value, icon: Icon, trend, color }: any) {
     orange: 'bg-orange-50 dark:bg-orange-500/10 text-orange-500 border-orange-100 dark:border-orange-500/20',
     red: 'bg-red-50 dark:bg-red-500/10 text-red-500 border-red-100 dark:border-red-500/20',
     green: 'bg-green-50 dark:bg-green-500/10 text-green-500 border-green-100 dark:border-green-500/20',
+    blue: 'bg-blue-50 dark:bg-blue-500/10 text-blue-500 border-blue-100 dark:border-blue-500/20',
     gray: 'bg-slate-50 dark:bg-slate-800 text-slate-500 border-slate-100 dark:border-slate-700'
   };
   return (
