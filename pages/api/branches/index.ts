@@ -7,9 +7,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(200).json(branches);
     } else if (req.method === 'POST') {
         try {
-            const { id, name, address } = req.body;
+            const { id, name } = req.body;
             const branch = await prisma.branch.create({
-                data: { id, name, address }
+                data: { id, name }
             });
             return res.status(200).json(branch);
         } catch (error: any) {

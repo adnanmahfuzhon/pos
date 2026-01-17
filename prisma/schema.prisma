@@ -96,7 +96,6 @@ model Income {
 model Branch {
   id       String    @id @default(uuid())
   name     String
-  address  String?
   
   sales    Sale[]
   expenses Expense[]
