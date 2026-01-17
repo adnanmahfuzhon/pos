@@ -40,7 +40,7 @@ export default function POS() {
   const [stockWarning, setStockWarning] = useState<string | null>(null);
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { showToast } = useToast();
+  const { showToast, updateToast } = useToast();
 
   useEffect(() => {
     setIsLoading(true);
@@ -146,9 +146,9 @@ export default function POS() {
   const handleCheckout = async () => {
     if (!isCartValid || isProcessing) return;
     setIsProcessing(true);
-    showToast('Memproses transaksi...', 'loading');
+    const toastId = showToast('Memproses transaksi...', 'loading');
 
-    // Backend handles stock stock reduction!
+    // Backend handles stock reduction!
     let totalHPP = 0;
     cart.forEach(cartItem => {
       const itemHPP = calculateHPP(cartItem.product, ingredients);
@@ -177,14 +177,14 @@ export default function POS() {
       const updatedIngredients = await getIngredients();
       setIngredients(updatedIngredients);
 
-      showToast('Transaksi Berhasil!', 'success');
+      updateToast(toastId, 'Transaksi Berhasil!', 'success');
       setCart([]);
       setIsMobileCartOpen(false);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (e) {
       console.error("Checkout failed", e);
-      showToast('Gagal memproses pesanan', 'error');
+      updateToast(toastId, 'Gagal memproses pesanan', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -400,10 +400,10 @@ export default function POS() {
             <button
               onClick={handleCheckout}
               disabled={!isCartValid || isProcessing}
-              className={`w-full py-6 rounded-3xl font-black text-[11px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-xl ${(!isCartValid || isProcessing) ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-950 dark:bg-orange-500 text-white hover:bg-black shadow-orange-500/20'}`}
+              className={`w-full py-6 rounded-3xl font-black text-[11px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-xl ${(!isCartValid || isProcessing) ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-950 dark:bg-orange-500 text-white hover:bg-black shadow-orange-500/20 active:scale-95'}`}
             >
-              {isProcessing ? 'Sinkronisasi...' : 'Proses Pesanan'}
-              <ChevronRight className={`w-4 h-4 ${(!isCartValid || isProcessing) ? 'hidden' : 'block'}`} />
+              {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Proses Pesanan'}
+              {!isProcessing && isCartValid && <ChevronRight className="w-4 h-4" />}
             </button>
           </div>
         </div>

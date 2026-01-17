@@ -12,6 +12,7 @@ interface Toast {
 
 interface ToastContextType {
     showToast: (message: string, type?: ToastType) => string;
+    updateToast: (id: string, message: string, type: ToastType) => void;
     removeToast: (id: string) => void;
 }
 
@@ -40,8 +41,16 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
         return id;
     }, [removeToast]);
 
+    const updateToast = useCallback((id: string, message: string, type: ToastType) => {
+        setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, message, type } : t)));
+
+        if (type !== 'loading') {
+            setTimeout(() => removeToast(id), 3000);
+        }
+    }, [removeToast]);
+
     return (
-        <ToastContext.Provider value={{ showToast, removeToast }}>
+        <ToastContext.Provider value={{ showToast, updateToast, removeToast }}>
             {children}
             <div className="fixed top-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none w-full max-w-xs">
                 {toasts.map((toast) => (

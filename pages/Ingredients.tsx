@@ -41,7 +41,7 @@ export default function Ingredients() {
   const [selectedIngForDetail, setSelectedIngForDetail] = useState<Ingredient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const { showToast } = useToast();
+  const { showToast, updateToast } = useToast();
 
   // Filter states
   const [filterType, setFilterType] = useState<string>('All');
@@ -157,23 +157,23 @@ export default function Ingredients() {
     };
 
     setIsSaving(true);
-    showToast(editingIngredient ? 'Memperbarui bahan...' : 'Menyimpan bahan...', 'loading');
+    const toastId = showToast(editingIngredient ? 'Memperbarui bahan...' : 'Menyimpan bahan...', 'loading');
 
     try {
       if (editingIngredient) {
         const updated = await updateIngredient(ingredientData.id, ingredientData);
         setIngredients(ingredients.map(i => i.id === updated.id ? updated : i));
-        showToast('Bahan berhasil diperbarui', 'success');
+        updateToast(toastId, 'Bahan berhasil diperbarui', 'success');
       } else {
         const created = await createIngredient(ingredientData);
         setIngredients([...ingredients, created]);
-        showToast('Bahan berhasil ditambahkan', 'success');
+        updateToast(toastId, 'Bahan berhasil ditambahkan', 'success');
       }
       setIsModalOpen(false);
       resetForm();
     } catch (e) {
       console.error("Failed to save ingredient", e);
-      showToast('Gagal menyimpan bahan', 'error');
+      updateToast(toastId, 'Gagal menyimpan bahan', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -197,7 +197,7 @@ export default function Ingredients() {
     if (!targetIng || scanQty <= 0) return;
 
     setIsSaving(true);
-    showToast('Memproses update stok...', 'loading');
+    const toastId = showToast('Memproses update stok...', 'loading');
 
     try {
       if (targetIng.type === 'Processed' || targetIng.type === 'Mix') {
@@ -212,7 +212,7 @@ export default function Ingredients() {
       const refreshed = await getIngredients();
       setIngredients(refreshed);
 
-      showToast(`Berhasil: ${targetIng.name} +${scanQty}`, 'success');
+      updateToast(toastId, `Berhasil: ${targetIng.name} +${scanQty}`, 'success');
       setScanResult(`Berhasil: ${targetIng.name} +${scanQty}`);
       setScanQty(0);
       setTimeout(() => {
@@ -222,7 +222,7 @@ export default function Ingredients() {
       }, 1500);
     } catch (e: any) {
       console.error(e);
-      showToast(e.message || "Gagal update stok", 'error');
+      updateToast(toastId, e.message || "Gagal update stok", 'error');
     } finally {
       setIsSaving(false);
     }

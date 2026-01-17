@@ -22,7 +22,7 @@ export default function Incomes() {
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const { showToast } = useToast();
+  const { showToast, updateToast } = useToast();
 
   // Date filter states
   const today = (() => {
@@ -63,13 +63,13 @@ export default function Incomes() {
     const timestamp = new Date(`${customDate}T12:00:00`).getTime();
 
     setIsSaving(true);
-    showToast(editingItem ? 'Memperbarui pemasukan...' : 'Menyimpan pemasukan...', 'loading');
+    const toastId = showToast(editingItem ? 'Memperbarui pemasukan...' : 'Menyimpan pemasukan...', 'loading');
 
     try {
       if (editingItem && editingItem.type === 'Manual') {
         const updated = await updateIncome(editingItem.id, { category, sourceName, amount, timestamp });
         setIncomes(incomes.map(i => i.id === updated.id ? updated : i));
-        showToast('Pemasukan berhasil diperbarui', 'success');
+        updateToast(toastId, 'Pemasukan berhasil diperbarui', 'success');
         setIsModalOpen(false);
         setEditingItem(null);
         resetForm();
@@ -83,13 +83,13 @@ export default function Incomes() {
         };
         const created = await createIncome(newIncome);
         setIncomes([created, ...incomes]);
-        showToast('Pemasukan berhasil ditambahkan', 'success');
+        updateToast(toastId, 'Pemasukan berhasil ditambahkan', 'success');
         setIsModalOpen(false);
         resetForm();
       }
     } catch (e) {
       console.error("Failed to save income", e);
-      showToast('Gagal menyimpan pemasukan', 'error');
+      updateToast(toastId, 'Gagal menyimpan pemasukan', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -126,7 +126,7 @@ export default function Incomes() {
     });
 
     setIsSaving(true);
-    showToast('Memperbarui transaksi...', 'loading');
+    const toastId = showToast('Memperbarui transaksi...', 'loading');
 
     try {
       const updated = await updateSale(selectedSale.id, {
@@ -137,13 +137,13 @@ export default function Incomes() {
       });
 
       setSales(sales.map(s => s.id === updated.id ? updated : s));
-      showToast('Transaksi berhasil diperbarui', 'success');
+      updateToast(toastId, 'Transaksi berhasil diperbarui', 'success');
       setIsEditSaleModalOpen(false);
       setSelectedSale(null);
       setEditingItem(null);
     } catch (e) {
       console.error("Failed to update sale", e);
-      showToast('Gagal mengupdate transaksi', 'error');
+      updateToast(toastId, 'Gagal mengupdate transaksi', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -152,7 +152,7 @@ export default function Incomes() {
   const deleteItem = async (id: string, type: 'Manual' | 'POS') => {
     if (confirm(`Hapus catatan ${type === 'POS' ? 'transaksi kasir' : 'pemasukan'} ini?`)) {
       setIsSaving(true);
-      showToast('Menghapus data...', 'loading');
+      const toastId = showToast('Menghapus data...', 'loading');
       try {
         if (type === 'Manual') {
           await deleteIncome(id);
@@ -161,10 +161,10 @@ export default function Incomes() {
           await deleteSale(id);
           setSales(sales.filter(s => s.id !== id));
         }
-        showToast('Data berhasil dihapus', 'success');
+        updateToast(toastId, 'Data berhasil dihapus', 'success');
       } catch (e) {
         console.error("Failed to delete item", e);
-        showToast('Gagal menghapus data', 'error');
+        updateToast(toastId, 'Gagal menghapus data', 'error');
       } finally {
         setIsSaving(false);
       }
@@ -693,9 +693,11 @@ export default function Incomes() {
               </button>
               <button
                 onClick={handleSave}
-                className="flex-[2] py-5 bg-orange-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-2xl shadow-orange-500/20 flex items-center justify-center gap-3 hover:bg-orange-600 transition-all active:scale-95"
+                disabled={isSaving}
+                className="flex-[2] py-5 bg-orange-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-2xl shadow-orange-500/20 flex items-center justify-center gap-3 hover:bg-orange-600 transition-all active:scale-95 disabled:opacity-50"
               >
-                <CheckCircle2 className="w-5 h-5" /> Simpan Transaksi
+                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                {isSaving ? 'MEMPROSES...' : 'Simpan Transaksi'}
               </button>
             </div>
           </div>

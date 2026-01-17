@@ -16,7 +16,7 @@ export default function Expenses() {
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const { showToast } = useToast();
+  const { showToast, updateToast } = useToast();
 
   // Date filter states
   const today = (() => {
@@ -75,7 +75,7 @@ export default function Expenses() {
     };
 
     setIsSaving(true);
-    const tid = showToast('Menyimpan pengeluaran...', 'loading');
+    const toastId = showToast('Menyimpan pengeluaran...', 'loading');
 
     try {
       const created = await createExpense(newExpense);
@@ -100,12 +100,12 @@ export default function Expenses() {
         }
       }
 
-      showToast('Pengeluaran berhasil disimpan', 'success');
+      updateToast(toastId, 'Pengeluaran berhasil disimpan', 'success');
       setIsModalOpen(false);
       resetForm();
     } catch (e) {
       console.error("Failed to save expense", e);
-      showToast('Gagal menyimpan pengeluaran', 'error');
+      updateToast(toastId, 'Gagal menyimpan pengeluaran', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -114,15 +114,15 @@ export default function Expenses() {
   const deleteExpenseFn = async (id: string) => {
     if (confirm('Hapus catatan pengeluaran ini? Tindakan ini tidak akan mengembalikan stok bahan yang sudah terinput.')) {
       setIsSaving(true);
-      showToast('Menghapus pengeluaran...', 'loading');
+      const toastId = showToast('Menghapus pengeluaran...', 'loading');
       try {
         await deleteExpense(id);
         const refreshedExpenses = await getExpenses();
         setExpenses(refreshedExpenses);
-        showToast('Data berhasil dihapus', 'success');
+        updateToast(toastId, 'Data berhasil dihapus', 'success');
       } catch (e) {
         console.error("Failed to delete expense", e);
-        showToast('Gagal menghapus pengeluaran', 'error');
+        updateToast(toastId, 'Gagal menghapus pengeluaran', 'error');
       } finally {
         setIsSaving(false);
       }

@@ -15,7 +15,7 @@ export default function Products() {
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const { showToast } = useToast();
+  const { showToast, updateToast } = useToast();
 
   // Form states
   const [name, setName] = useState('');
@@ -100,16 +100,16 @@ export default function Products() {
       if (editingProduct) {
         const updated = await updateProduct(newProduct.id, newProduct);
         setProducts(products.map(p => p.id === updated.id ? updated : p));
-        showToast('Menu berhasil diperbarui', 'success');
+        updateToast(toastId, 'Menu berhasil diperbarui', 'success');
       } else {
         const created = await createProduct(newProduct);
         setProducts([...products, created]);
-        showToast('Menu berhasil ditambahkan', 'success');
+        updateToast(toastId, 'Menu berhasil ditambahkan', 'success');
       }
       setIsModalOpen(false);
     } catch (e) {
       console.error("Failed to save product", e);
-      showToast('Gagal menyimpan menu', 'error');
+      updateToast(toastId, 'Gagal menyimpan menu', 'error');
     } finally {
       setIsSaving(false);
     }
