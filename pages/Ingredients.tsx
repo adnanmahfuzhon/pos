@@ -200,17 +200,17 @@ export default function Ingredients() {
     const toastId = showToast('Memproses update stok...', 'loading');
 
     try {
-      let updatedIng: Ingredient;
       if (targetIng.type === 'Processed' || targetIng.type === 'Mix') {
         // Use atomic production API
-        updatedIng = await produceIngredient(targetIng.id, scanQty);
+        await produceIngredient(targetIng.id, scanQty);
       } else {
         // Regular stock increment
         const newStock = targetIng.stock + scanQty;
-        updatedIng = await updateIngredient(targetIng.id, { stock: newStock });
+        await updateIngredient(targetIng.id, { stock: newStock });
       }
 
-      setIngredients(prev => prev.map(i => i.id === updatedIng.id ? updatedIng : i));
+      const refreshed = await getIngredients();
+      setIngredients(refreshed);
 
       updateToast(toastId, `Berhasil: ${targetIng.name} +${scanQty}`, 'success');
       setScanResult(`Berhasil: ${targetIng.name} +${scanQty}`);

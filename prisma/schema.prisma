@@ -52,6 +52,7 @@ model Sale {
   totalHPP      Float
   paymentMethod String
   channel       String
+  branchId      String   @default("default")
   
   details       SaleDetail[]
 }
@@ -75,6 +76,7 @@ model Expense {
   amount             Float
   linkedIngredientId String?
   quantity           Float?
+  branchId           String  @default("default")
 }
 
 model Income {
@@ -83,4 +85,5 @@ model Income {
   category   String
   sourceName String
   amount     Float
+  branchId   String @default("default")
 }

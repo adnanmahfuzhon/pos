@@ -54,6 +54,7 @@ export interface Sale {
   paymentMethod: PaymentMethod;
   channel: SalesChannel;
   details: SaleDetail[];
+  branchId?: string;
 }
 
 export type ExpenseCategory = 'Bahan' | 'Operasional' | 'Lain-lain';
@@ -66,6 +67,7 @@ export interface Expense {
   amount: number;
   linkedIngredientId?: string;
   quantity?: number; // for material purchase
+  branchId?: string;
 }
 
 export type IncomeCategory = 'Penjualan Luar' | 'Layanan' | 'Lain-lain';
@@ -76,6 +78,7 @@ export interface Income {
   category: IncomeCategory;
   sourceName: string;
   amount: number;
+  branchId?: string;
 }
 
 export interface DashboardStats {

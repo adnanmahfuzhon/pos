@@ -72,6 +72,7 @@ export default function Expenses() {
       amount,
       linkedIngredientId: category === 'Bahan' ? linkedIngredientId : undefined,
       quantity: category === 'Bahan' ? quantity : undefined,
+      branchId: 'default'
     };
 
     setIsSaving(true);
@@ -92,10 +93,11 @@ export default function Expenses() {
             pricePerUnit: hasPriceChanged ? unitPriceFromExpense : ing.pricePerUnit,
           };
 
-          const updatedIng = await updateIngredient(ing.id, updatedIngData);
+          await updateIngredient(ing.id, updatedIngData);
 
-          // Update local ingredients state without re-fetching
-          setIngredients(prev => prev.map(i => i.id === updatedIng.id ? updatedIng : i));
+          // Refresh ingredients
+          const refetchedIngs = await getIngredients();
+          setIngredients(refetchedIngs);
         }
       }
 

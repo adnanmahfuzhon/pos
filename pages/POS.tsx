@@ -162,6 +162,7 @@ export default function POS() {
       totalHPP,
       paymentMethod,
       channel: salesChannel,
+      branchId: 'default',
       details: cart.map(item => ({
         productId: item.product.id,
         quantity: item.quantity,
@@ -173,19 +174,9 @@ export default function POS() {
     try {
       await createSale(newSale);
 
-      // Optimistic/Local stock update to avoid full re-fetch
-      setIngredients(prev => {
-        const newIngs = [...prev];
-        cart.forEach(cartItem => {
-          cartItem.product.ingredients.forEach(pi => {
-            const idx = newIngs.findIndex(i => i.id === pi.ingredientId);
-            if (idx > -1) {
-              newIngs[idx] = { ...newIngs[idx], stock: newIngs[idx].stock - (pi.quantity * cartItem.quantity) };
-            }
-          });
-        });
-        return newIngs;
-      });
+      // Refresh ingredients to get updated stock
+      const updatedIngredients = await getIngredients();
+      setIngredients(updatedIngredients);
 
       updateToast(toastId, 'Transaksi Berhasil!', 'success');
       setCart([]);
