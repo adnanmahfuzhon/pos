@@ -155,11 +155,11 @@ export default function Incomes() {
       const toastId = showToast('Menghapus data...', 'loading');
       try {
         if (type === 'Manual') {
+          setIncomes(prev => prev.filter(i => i.id !== id));
           await deleteIncome(id);
-          setIncomes(incomes.filter(i => i.id !== id));
         } else {
+          setSales(prev => prev.filter(s => s.id !== id));
           await deleteSale(id);
-          setSales(sales.filter(s => s.id !== id));
         }
         updateToast(toastId, 'Data berhasil dihapus', 'success');
       } catch (e) {

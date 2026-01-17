@@ -92,11 +92,10 @@ export default function Expenses() {
             pricePerUnit: hasPriceChanged ? unitPriceFromExpense : ing.pricePerUnit,
           };
 
-          await updateIngredient(ing.id, updatedIngData);
+          const updatedIng = await updateIngredient(ing.id, updatedIngData);
 
-          // Refresh ingredients
-          const refetchedIngs = await getIngredients();
-          setIngredients(refetchedIngs);
+          // Update local ingredients state without re-fetching
+          setIngredients(prev => prev.map(i => i.id === updatedIng.id ? updatedIng : i));
         }
       }
 

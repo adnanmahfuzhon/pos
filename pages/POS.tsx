@@ -173,9 +173,19 @@ export default function POS() {
     try {
       await createSale(newSale);
 
-      // Refresh ingredients to get updated stock
-      const updatedIngredients = await getIngredients();
-      setIngredients(updatedIngredients);
+      // Optimistic/Local stock update to avoid full re-fetch
+      setIngredients(prev => {
+        const newIngs = [...prev];
+        cart.forEach(cartItem => {
+          cartItem.product.ingredients.forEach(pi => {
+            const idx = newIngs.findIndex(i => i.id === pi.ingredientId);
+            if (idx > -1) {
+              newIngs[idx] = { ...newIngs[idx], stock: newIngs[idx].stock - (pi.quantity * cartItem.quantity) };
+            }
+          });
+        });
+        return newIngs;
+      });
 
       updateToast(toastId, 'Transaksi Berhasil!', 'success');
       setCart([]);
