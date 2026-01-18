@@ -4,6 +4,7 @@ import { prisma } from '../../../lib/prisma';
 import { extractToken, verifyToken, ROLES } from '../../../lib/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    // [DEPLOY TRIGGER] Force Vercel Redeploy
     const token = extractToken(req.headers.authorization);
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
