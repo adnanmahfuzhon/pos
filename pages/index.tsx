@@ -75,6 +75,17 @@ export default function Dashboard() {
     }
   }, [isAuthLoading, isAuthenticated, user, router]);
 
+  // Fetch Branches for Super Admin (Restore Feature)
+  const [branches, setBranches] = useState<any[]>([]);
+  useEffect(() => {
+    if (isSuperAdmin && isAuthenticated) {
+      fetch('/api/branches')
+        .then(res => res.json())
+        .then(data => setBranches(Array.isArray(data) ? data : []))
+        .catch(console.error);
+    }
+  }, [isSuperAdmin, isAuthenticated]);
+
   // Date Filter states
   const today = (() => {
     const d = new Date();
@@ -637,27 +648,87 @@ export default function Dashboard() {
                 <span className="text-[10px] font-black uppercase tracking-widest">Backup Database</span>
               </button>
 
-              <div className="relative">
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={importDatabase}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-                <button className="w-full py-5 bg-white/5 hover:bg-white/10 text-white rounded-2xl border border-white/10 flex items-center justify-center gap-3 transition-all group">
-                  <Upload className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Restore Database</span>
-                </button>
-              </div>
+              <div className="pt-4 border-t border-white/10 space-y-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Target Restore (Opsional)</label>
+                  <select
+                    id="restoreTargetBranch"
+                    className="bg-slate-900 border border-slate-700 text-white text-xs rounded-xl p-3 focus:outline-none focus:border-orange-500"
+                    defaultValue=""
+                  >
+                    <option value="">Gunakan ID Asli (Default)</option>
+                    {branches.map(b => (
+                      <option key={b.id} value={b.id}>Inject ke: {b.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <div className="pt-4 border-t border-white/10">
-                <button
-                  onClick={handleClearDatabase}
-                  className="w-full py-5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl border border-red-500/20 flex items-center justify-center gap-3 transition-all group"
-                >
-                  <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Reset Seluruh Data</span>
-                </button>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+
+                      const targetBranchEl = document.getElementById('restoreTargetBranch') as HTMLSelectElement;
+                      const targetBranchId = targetBranchEl?.value;
+
+                      const confirmMsg = targetBranchId
+                        ? `⚠️ INJECT DATA ke Cabang ID: ${targetBranchId}?\n\nSemua data dari file akan dimasukkan ke cabang ini. Data yang ada akan di-update.`
+                        : "⚠️ RESTORE DATABASE?\n\nData akan dikembalikan sesuai ID aslinya di file backup.";
+
+                      if (!confirm(confirmMsg)) {
+                        e.target.value = ''; // Reset
+                        return;
+                      }
+
+                      const reader = new FileReader();
+                      reader.onload = async (event) => {
+                        try {
+                          const jsonData = JSON.parse(event.target?.result as string);
+
+                          const query = targetBranchId ? `?targetBranchId=${targetBranchId}` : '';
+                          const res = await fetch(`/api/admin/restore${query}`, {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${localStorage.getItem('pos_token') || 'dev-bypass-token'}`
+                            },
+                            body: JSON.stringify(jsonData)
+                          });
+
+                          const result = await res.json();
+                          if (res.ok) {
+                            alert(`✅ Restore Berhasil!\n\nTarget: ${result.targetBranch}\nDetail: ${JSON.stringify(result.details, null, 2)}`);
+                            window.location.reload();
+                          } else {
+                            alert(`❌ Gagal: ${result.error}`);
+                          }
+                        } catch (err: any) {
+                          alert("❌ Error: " + err.message);
+                        }
+                        e.target.value = ''; // Reset
+                      };
+                      reader.readAsText(file);
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                  />
+                  <button className="w-full py-5 bg-white/5 hover:bg-white/10 text-white rounded-2xl border border-white/10 flex items-center justify-center gap-3 transition-all group">
+                    <Upload className="w-4 h-4 text-green-500 group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Restore / Inject Data</span>
+                  </button>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={handleClearDatabase}
+                    className="w-full py-5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl border border-red-500/20 flex items-center justify-center gap-3 transition-all group"
+                  >
+                    <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Reset Seluruh Data</span>
+                  </button>
+                </div>
               </div>
             </div>
 
