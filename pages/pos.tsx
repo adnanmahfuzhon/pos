@@ -197,7 +197,7 @@ export default function POS() {
       totalHPP,
       paymentMethod,
       channel: salesChannel,
-      branchId: 'default',
+      branchId: selectedBranchId || 'default', // FIXED: Use dynamic branch ID
       details: cart.map(item => ({
         productId: item.product.id,
         quantity: item.quantity,
