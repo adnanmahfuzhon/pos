@@ -84,7 +84,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 });
 
                 if (response.ok) {
-                    const { user, branch } = await response.json();
+                    const { user, branch, allBranches } = await response.json();
+
                     setState({
                         user,
                         branch,
@@ -95,8 +96,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
                     // Restore selected branch for super admin
                     const savedBranch = localStorage.getItem(SELECTED_BRANCH_KEY);
-                    if (user.role === ROLES.SUPER_ADMIN && savedBranch) {
-                        setSelectedBranchIdState(savedBranch);
+
+                    // [FIX] Validate saved branch ID exists
+                    if (user.role === ROLES.SUPER_ADMIN) {
+                        if (savedBranch && allBranches && allBranches.length > 0) {
+                            const isValid = allBranches.find((b: any) => b.id === savedBranch);
+                            if (isValid) {
+                                setSelectedBranchIdState(savedBranch);
+                            } else {
+                                // Invalid/Stale ID - Auto Select First Branch
+                                const defaultId = allBranches[0].id;
+                                console.warn('Fixed stale branch ID', savedBranch, '->', defaultId);
+                                setSelectedBranchIdState(defaultId);
+                                localStorage.setItem(SELECTED_BRANCH_KEY, defaultId);
+                            }
+                        } else if (allBranches && allBranches.length > 0) {
+                            // No selection but branches exist - Select First
+                            const defaultId = allBranches[0].id;
+                            setSelectedBranchIdState(defaultId);
+                            localStorage.setItem(SELECTED_BRANCH_KEY, defaultId);
+                        }
                     } else if (branch) {
                         setSelectedBranchIdState(branch.id);
                     }

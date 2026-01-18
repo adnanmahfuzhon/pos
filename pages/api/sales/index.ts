@@ -51,6 +51,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 else if (!targetBranchId) return res.status(400).json({ error: 'Branch ID required' });
             }
 
+            // [NEW] Validate Branch Existence to prevent FK Error (P2003)
+            const branchExists = await prisma.branch.findUnique({
+                where: { id: targetBranchId as string }
+            });
+
+            if (!branchExists) {
+                return res.status(400).json({
+                    error: `Invalid Branch ID (${targetBranchId}). Please select a valid branch or re-login.`
+                });
+            }
+
             const sale = await prisma.sale.create({
                 data: {
                     id: id || `TRX-${Date.now()}`,

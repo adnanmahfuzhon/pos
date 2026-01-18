@@ -48,6 +48,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 targetBranchId = branchId;
             }
 
+            // [NEW] Validate Branch Existence
+            const branchExists = await prisma.branch.findUnique({
+                where: { id: targetBranchId as string }
+            });
+            if (!branchExists) return res.status(400).json({ error: `Invalid Branch ID (${targetBranchId}). Re-select branch.` });
+
             const income = await prisma.income.create({
                 data: {
                     ...data,

@@ -32,9 +32,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Return user (without password)
         const { password: _, ...safeUser } = user;
+
+        // [FIX] For Super Admin, return all branches to validate selectedBranchId on frontend
+        let allBranches = [];
+        if (safeUser.role === 'SUPER_ADMIN') {
+            allBranches = await prisma.branch.findMany({ select: { id: true, name: true } });
+        }
+
         return res.status(200).json({
             user: safeUser,
             branch: user.branch,
+            allBranches, // Send list for validation
         });
     } catch (error) {
         console.error('Auth me error:', error);
