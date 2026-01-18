@@ -34,10 +34,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(400).json({ error: 'No data provided' });
         }
 
-        const { ingredients = [], products = [], sales = [], expenses = [], incomes = [] } = backupData;
+        const { branches = [], ingredients = [], products = [], sales = [], expenses = [], incomes = [] } = backupData;
         const effectiveBranchId = (typeof targetBranchId === 'string' && targetBranchId) ? targetBranchId : null;
 
         const results = {
+            branches: 0,
             ingredients: 0,
             products: 0,
             sales: 0,
@@ -47,6 +48,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Use transaction for data integrity
         await prisma.$transaction(async (tx) => {
+            // 1. Branches (First priority)
+            if (branches.length > 0) {
+                for (const item of branches) {
+                    const { id, ...data } = item;
+                    // Only restore if we are doing a Full Restore OR if this is the target branch
+                    if (!effectiveBranchId || id === effectiveBranchId) {
+                        delete data.createdAt;
+                        delete data.updatedAt;
+                        await tx.branch.upsert({
+                            where: { id: id },
+                            update: data,
+                            create: { id, ...data }
+                        });
+                    }
+                }
+                results.branches = branches.length;
+            }
+
+            // Ensure target branch exists if specified (fallback)
+            if (effectiveBranchId) {
+                const branchExists = await tx.branch.findUnique({ where: { id: effectiveBranchId } });
+                if (!branchExists) {
+                    await tx.branch.create({
+                        data: {
+                            id: effectiveBranchId,
+                            name: `Restored Branch (${effectiveBranchId})`,
+                            location: 'Restored Location'
+                        }
+                    });
+                }
+            }
+
             // 2. Ingredients
             if (ingredients.length > 0) {
                 for (const item of ingredients) {

@@ -284,14 +284,16 @@ export default function Dashboard() {
   // Backup & Restore Database - Now uses API calls
   const exportDatabase = async () => {
     try {
-      const [ingredientsData, productsData, salesData, expensesData, incomesData] = await Promise.all([
+      const [ingredientsData, productsData, salesData, expensesData, incomesData, branchesData] = await Promise.all([
         getIngredients(),
         getProducts(),
         getSales(),
         getExpenses(),
-        getIncomes()
+        getIncomes(),
+        fetch('/api/branches').then(r => r.json())
       ]);
       const database = {
+        branches: Array.isArray(branchesData) ? branchesData : [],
         ingredients: ingredientsData,
         products: productsData,
         sales: salesData,
