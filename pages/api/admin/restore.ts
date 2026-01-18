@@ -73,8 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     await tx.branch.create({
                         data: {
                             id: effectiveBranchId,
-                            name: `Restored Branch (${effectiveBranchId})`,
-                            location: 'Restored Location'
+                            name: `Restored Branch (${effectiveBranchId})`
                         }
                     });
                 }
