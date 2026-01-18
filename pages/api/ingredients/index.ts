@@ -39,13 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     else if (req.method === 'POST') {
         try {
-            if (payload.role === ROLES.STAFF && !payload.permissions?.includes('can_manage_ingredients')) {
-                // Usually staff don't create ingredients, but maybe permissions allow it?
-                // Let's stick to safe defaults: Only SA and Manager
-                if (payload.role === ROLES.STAFF) return res.status(403).json({ error: 'Forbidden' });
-            }
-            // Actually, sticking to Role based is safer for now.
             if (payload.role === ROLES.STAFF) return res.status(403).json({ error: 'Forbidden' });
+
 
             const { branchId, ...data } = req.body;
             let targetBranchId = payload.branchId;
