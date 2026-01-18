@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../../lib/prisma';
-import { hashPassword, ROLES } from '../../../lib/auth';
+import { prisma } from '../../lib/prisma';
+import { hashPassword, ROLES } from '../../lib/auth';
 
 /**
  * API endpoint to seed initial data
