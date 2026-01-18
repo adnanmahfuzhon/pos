@@ -88,6 +88,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     // Clean data
                     delete data.createdAt;
                     delete data.updatedAt;
+                    // @ts-ignore
+                    delete data._count;
 
                     if (effectiveBranchId) data.branchId = effectiveBranchId;
 
@@ -106,6 +108,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     const { id, ingredients: prodIngredients, ...data } = item;
                     delete data.createdAt;
                     delete data.updatedAt;
+                    // @ts-ignore
+                    delete data._count;
 
                     if (effectiveBranchId) data.branchId = effectiveBranchId;
 
@@ -142,6 +146,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 for (const item of sales) {
                     const { id, details, ...data } = item;
                     delete data.createdAt; // Keep original timestamp usually
+                    // @ts-ignore
+                    delete data._count;
 
                     if (effectiveBranchId) data.branchId = effectiveBranchId;
 
@@ -175,6 +181,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     const { id, ...data } = item;
                     delete data.createdAt;
                     if (effectiveBranchId) data.branchId = effectiveBranchId;
+                    // @ts-ignore
+                    delete data._count;
 
                     await tx.expense.upsert({
                         where: { id: id },
@@ -191,6 +199,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     const { id, ...data } = item;
                     delete data.createdAt;
                     if (effectiveBranchId) data.branchId = effectiveBranchId;
+                    // @ts-ignore
+                    delete data._count;
 
                     await tx.income.upsert({
                         where: { id: id },
