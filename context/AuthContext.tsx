@@ -69,11 +69,44 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Check token on mount
     useEffect(() => {
         const checkAuth = async () => {
+            // BYPASS LOGIC START
+            let storedToken = localStorage.getItem(TOKEN_KEY);
+            if (!storedToken) {
+                storedToken = 'dev-bypass-token';
+                localStorage.setItem(TOKEN_KEY, storedToken);
+            }
+
+            // Immediately Bypass
+            if (storedToken === 'dev-bypass-token') {
+                setState({
+                    user: {
+                        id: 'dev-admin',
+                        email: 'admin@flavorpos.com',
+                        username: 'DevAdmin',
+                        name: 'Super Admin (Bypass)',
+                        role: 'SUPER_ADMIN',
+                        branchId: null,
+                        isActive: true,
+                        createdAt: new Date()
+                    } as SafeUser,
+                    branch: null,
+                    token: storedToken,
+                    isAuthenticated: true,
+                    isLoading: false,
+                });
+                // Default to NO specific branch for SA
+                return;
+            }
+            // BYPASS LOGIC END
+
+            /* 
+            // Original Logic
             const storedToken = localStorage.getItem(TOKEN_KEY);
             if (!storedToken) {
                 setState(prev => ({ ...prev, isLoading: false }));
                 return;
             }
+            */
 
             try {
                 const response = await fetch('/api/auth/me', {

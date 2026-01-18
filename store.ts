@@ -6,7 +6,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 const getAuthHeaders = () => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('pos_token');
-    return token ? { 'Authorization': `Bearer ${token}` } : {};
+    // Default to bypass token if no token found (Development Bypass)
+    const effectiveToken = token || 'dev-bypass-token';
+    return { 'Authorization': `Bearer ${effectiveToken}` };
   }
   return {};
 };
