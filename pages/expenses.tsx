@@ -76,7 +76,7 @@ export default function Expenses() {
       amount,
       linkedIngredientId: category === 'Bahan' ? linkedIngredientId : undefined,
       quantity: category === 'Bahan' ? quantity : undefined,
-      branchId: 'default'
+      branchId: selectedBranchId || 'default'
     };
 
     setIsSaving(true);

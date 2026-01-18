@@ -85,7 +85,7 @@ export default function Incomes() {
           category,
           sourceName,
           amount,
-          branchId: 'default'
+          branchId: selectedBranchId || 'default'
         };
         const created = await createIncome(newIncome);
         setIncomes([created, ...incomes]);
