@@ -22,7 +22,8 @@ import {
   Smartphone,
   Bike,
   Car,
-  Globe
+  Globe,
+  Building2
 } from 'lucide-react';
 import {
   BarChart,
@@ -53,14 +54,26 @@ import { Ingredient, Sale, Expense, Income, Product } from '../types';
 import DateFilter from '../components/DateFilter';
 
 import SkeletonDashboard from '../components/SkeletonDashboard';
+import { useAuth } from '../context/AuthContext';
+import { useRouter } from 'next/router';
 
 export default function Dashboard() {
+  const router = useRouter();
+  const { user, isSuperAdmin, selectedBranchId, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [sales, setSales] = useState<Sale[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
+
+  // Redirect Staff to POS
+  useEffect(() => {
+    if (!isAuthLoading && isAuthenticated && user?.role === 'STAFF') {
+      router.push('/pos');
+    }
+  }, [isAuthLoading, isAuthenticated, user, router]);
 
   // Date Filter states
   const today = (() => {
@@ -99,24 +112,33 @@ export default function Dashboard() {
     }
   };
 
-  // Filtered Data based on Date Range
+  // Determine effective branch ID for filtering
+  const effectiveBranchId = isSuperAdmin ? selectedBranchId : user?.branchId;
+
+  // Filter Data based on Date Range AND Branch
   const filteredSales = useMemo(() =>
     sales.filter(s => {
       const d = new Date(s.timestamp).toISOString().split('T')[0];
-      return d >= startDate && d <= endDate;
-    }), [sales, startDate, endDate]);
+      const matchesDate = d >= startDate && d <= endDate;
+      const matchesBranch = !effectiveBranchId || s.branchId === effectiveBranchId || (effectiveBranchId === 'default' && !s.branchId); // Handle legacy data
+      return matchesDate && matchesBranch;
+    }), [sales, startDate, endDate, effectiveBranchId]);
 
   const filteredExpenses = useMemo(() =>
     expenses.filter(e => {
       const d = new Date(e.timestamp).toISOString().split('T')[0];
-      return d >= startDate && d <= endDate;
-    }), [expenses, startDate, endDate]);
+      const matchesDate = d >= startDate && d <= endDate;
+      const matchesBranch = !effectiveBranchId || e.branchId === effectiveBranchId || (effectiveBranchId === 'default' && !e.branchId);
+      return matchesDate && matchesBranch;
+    }), [expenses, startDate, endDate, effectiveBranchId]);
 
   const filteredIncomes = useMemo(() =>
     incomes.filter(i => {
       const d = new Date(i.timestamp).toISOString().split('T')[0];
-      return d >= startDate && d <= endDate;
-    }), [incomes, startDate, endDate]);
+      const matchesDate = d >= startDate && d <= endDate;
+      const matchesBranch = !effectiveBranchId || i.branchId === effectiveBranchId || (effectiveBranchId === 'default' && !i.branchId);
+      return matchesDate && matchesBranch;
+    }), [incomes, startDate, endDate, effectiveBranchId]);
 
   // Financial Calculations
   const posRevenue = filteredSales.reduce((sum, s) => sum + s.totalAmount, 0);
@@ -242,7 +264,8 @@ export default function Dashboard() {
     'GoFood': Car
   };
 
-  if (isLoading) return <SkeletonDashboard />;
+  if (isLoading || isAuthLoading) return <SkeletonDashboard />;
+  if (!isAuthenticated || user?.role === 'STAFF') return null; // Avoid flash of content before redirect
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
@@ -302,6 +325,61 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
+      {/* Super Admin - Branch Comparison View (Only when NO specific branch is selected) */}
+      {isSuperAdmin && !selectedBranchId && (
+        <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-32 bg-orange-500/20 blur-[100px] rounded-full pointer-events-none"></div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-orange-500 rounded-2xl shadow-lg shadow-orange-500/20">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black tracking-tight uppercase">Overview Seluruh Cabang</h2>
+                <p className="text-orange-400 font-bold text-xs uppercase tracking-widest">Perbandingan Performa Outlet</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Branch Comparison Chart */}
+              <div className="h-64 bg-slate-800/50 rounded-3xl p-6 border border-slate-700">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Omzet per Cabang</h3>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[
+                    // Mock data for comparison - since we don't have real multi-branch data yet
+                    { name: 'Pusat', revenue: totalRevenue },
+                    { name: 'Cabang 2', revenue: 0 },
+                    { name: 'Cabang 3', revenue: 0 }
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} />
+                    <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', color: '#fff' }} />
+                    <Bar dataKey="revenue" fill="#f97316" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Branch Performance Summary */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 flex items-center justify-center bg-orange-500 text-white font-black rounded-lg text-xs">1</span>
+                    <div>
+                      <p className="text-sm font-bold text-white uppercase">Cabang Pusat (Default)</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">{transactionCount} Transaksi</p>
+                    </div>
+                  </div>
+                  <p className="text-lg font-black text-green-400">{formatCurrency(totalRevenue)}</p>
+                </div>
+                <div className="p-6 text-center border border-dashed border-slate-700 rounded-2xl">
+                  <p className="text-xs text-slate-500 italic">Belum ada data cabang lain.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 md:gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Dashboard Audit</h1>

@@ -22,7 +22,8 @@ import { getIngredients, createIngredient, updateIngredient, deleteIngredient, p
 import { Ingredient, IngredientType, ProductIngredient } from '../types';
 import SkeletonIngredients from '../components/SkeletonIngredients';
 import { useToast } from '../context/ToastContext';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Loader2, Eye } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -42,6 +43,9 @@ export default function Ingredients() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { showToast, updateToast } = useToast();
+  const { canEdit, isSuperAdmin, selectedBranchId } = useAuth();
+  const canModify = canEdit('ingredients');
+
 
   // Filter states
   const [filterType, setFilterType] = useState<string>('All');
@@ -72,11 +76,11 @@ export default function Ingredients() {
 
   useEffect(() => {
     setIsLoading(true);
-    getIngredients()
+    getIngredients(selectedBranchId || undefined)
       .then(setIngredients)
       .catch(console.error)
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [selectedBranchId]);
 
   // AUTOMATIC HPP CALCULATION FOR PROCESSED/MIX
   useEffect(() => {
@@ -294,27 +298,38 @@ export default function Ingredients() {
           <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1 italic">Inventaris Real-Time • Monitoring Harga</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={() => { setIsScanOpen(true); setSelectedIngId(''); }}
-            className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-6 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm active:scale-95"
-          >
-            <Scan className="w-4 h-4" />
-            Update Stok Cepat
-          </button>
-          <button
-            onClick={() => { setIsProductionOpen(true); setSelectedIngId(''); setScanQty(0); }}
-            className="bg-slate-950 dark:bg-slate-800 text-white px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 border border-slate-800 hover:bg-black transition-all shadow-xl active:scale-95"
-          >
-            <Calculator className="w-4 h-4 text-orange-500" />
-            Input Produksi
-          </button>
-          <button
-            onClick={() => openModal()}
-            className="bg-orange-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-orange-600 shadow-xl shadow-orange-500/20 transition-all active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            Bahan Baru
-          </button>
+
+          {canModify && (
+            <>
+              <button
+                onClick={() => { setIsScanOpen(true); setSelectedIngId(''); }}
+                className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-6 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm active:scale-95"
+              >
+                <Scan className="w-4 h-4" />
+                Update Stok Cepat
+              </button>
+              <button
+                onClick={() => { setIsProductionOpen(true); setSelectedIngId(''); setScanQty(0); }}
+                className="bg-slate-950 dark:bg-slate-800 text-white px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 border border-slate-800 hover:bg-black transition-all shadow-xl active:scale-95"
+              >
+                <Calculator className="w-4 h-4 text-orange-500" />
+                Input Produksi
+              </button>
+              <button
+                onClick={() => openModal()}
+                className="bg-orange-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-orange-600 shadow-xl shadow-orange-500/20 transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                Bahan Baru
+              </button>
+            </>
+          )}
+          {isSuperAdmin && (
+            <div className="flex items-center gap-2 px-6 py-4 bg-purple-500/10 border border-purple-500/20 rounded-[1.5rem]">
+              <Eye className="w-4 h-4 text-purple-500" />
+              <span className="text-[10px] font-black text-purple-500 uppercase tracking-widest">View Only Mode</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -466,10 +481,12 @@ export default function Ingredients() {
                       )}
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => openModal(item)} className="p-2.5 text-slate-400 hover:text-orange-500 transition-all"><Edit2 className="w-4 h-4" /></button>
-                        <button onClick={() => deleteIngredientFn(item.id)} className="p-2.5 text-slate-400 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
-                      </div>
+                      {canModify && (
+                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                          <button onClick={() => openModal(item)} className="p-2.5 text-slate-400 hover:text-orange-500 transition-all"><Edit2 className="w-4 h-4" /></button>
+                          <button onClick={() => deleteIngredientFn(item.id)} className="p-2.5 text-slate-400 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

@@ -7,7 +7,8 @@ import { Expense, Ingredient, ExpenseCategory, PriceRecord } from '../types';
 import DateFilter from '../components/DateFilter';
 import SkeletonTransactions from '../components/SkeletonTransactions';
 import { useToast } from '../context/ToastContext';
-import { Loader2, Save } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Loader2, Save, Eye } from 'lucide-react';
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -16,7 +17,10 @@ export default function Expenses() {
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
   const { showToast, updateToast } = useToast();
+  const { canEdit, isSuperAdmin, selectedBranchId } = useAuth();
+  const canModify = canEdit('expenses');
 
   // Date filter states
   const today = (() => {
@@ -47,14 +51,14 @@ export default function Expenses() {
   useEffect(() => {
     setIsLoading(true);
     Promise.all([
-      getExpenses(),
-      getIngredients()
+      getExpenses(selectedBranchId || undefined),
+      getIngredients(selectedBranchId || undefined)
     ]).then(([expenses, ingredients]) => {
       setExpenses(expenses);
       setIngredients(ingredients);
     }).catch(console.error)
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [selectedBranchId]);
 
   const handleSave = async () => {
     if (amount <= 0 || (category === 'Bahan' && (!linkedIngredientId || quantity <= 0))) {
@@ -167,13 +171,21 @@ export default function Expenses() {
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Pengeluaran</h1>
           <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1 italic">Audit Biaya & Belanja Bahan</p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="w-full sm:w-auto bg-red-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all active:scale-95"
-        >
-          <Plus className="w-5 h-5" />
-          Input Biaya
-        </button>
+        {canModify && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="w-full sm:w-auto bg-red-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all active:scale-95"
+          >
+            <Plus className="w-5 h-5" />
+            Input Biaya
+          </button>
+        )}
+        {isSuperAdmin && (
+          <div className="flex items-center gap-2 px-6 py-4 bg-purple-500/10 border border-purple-500/20 rounded-[1.5rem]">
+            <Eye className="w-5 h-5 text-purple-500" />
+            <span className="text-[10px] font-black text-purple-500 uppercase tracking-widest">View Only Mode</span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -226,12 +238,14 @@ export default function Expenses() {
                   </div>
                   <div className="flex items-center justify-between w-full sm:w-auto gap-6 sm:pl-4 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-slate-800 pt-4 sm:pt-0">
                     <p className="text-xl font-black text-red-500">-{formatCurrency(expense.amount)}</p>
-                    <button
-                      onClick={() => deleteExpenseFn(expense.id)}
-                      className="p-3 text-slate-300 hover:text-red-500 transition-colors sm:opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    {canModify && (
+                      <button
+                        onClick={() => deleteExpenseFn(expense.id)}
+                        className="p-3 text-slate-300 hover:text-red-500 transition-colors sm:opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))

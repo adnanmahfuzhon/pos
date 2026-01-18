@@ -5,9 +5,10 @@ import { getIncomes, createIncome, updateIncome, deleteIncome, getSales, updateS
 import { Income, IncomeCategory, Sale, Product, SaleDetail, Ingredient } from '../types';
 
 import DateFilter from '../components/DateFilter';
-import { Edit2, Minus, Loader2 } from 'lucide-react';
+import { Edit2, Minus, Loader2, Eye } from 'lucide-react';
 import SkeletonTransactions from '../components/SkeletonTransactions';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 import { isBluetoothSupported, printReceipt, ReceiptData } from '../lib/thermalPrint';
 
 export default function Incomes() {
@@ -25,6 +26,8 @@ export default function Incomes() {
   const [isSaving, setIsSaving] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const { showToast, updateToast } = useToast();
+  const { canEdit, isSuperAdmin, selectedBranchId } = useAuth();
+  const canModify = canEdit('incomes');
 
   // Date filter states
   const today = (() => {
@@ -46,10 +49,10 @@ export default function Incomes() {
   useEffect(() => {
     setIsLoading(true);
     Promise.all([
-      getIncomes(),
-      getSales(),
-      getProducts(),
-      getIngredients()
+      getIncomes(selectedBranchId || undefined),
+      getSales(selectedBranchId || undefined),
+      getProducts(selectedBranchId || undefined),
+      getIngredients(selectedBranchId || undefined)
     ]).then(([incomes, sales, products, ingredients]) => {
       setIncomes(incomes);
       setSales(sales);
@@ -57,7 +60,7 @@ export default function Incomes() {
       setIngredients(ingredients);
     }).catch(console.error)
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [selectedBranchId]);
 
   const handleSave = async () => {
     if (!sourceName || amount <= 0) return;
@@ -245,16 +248,24 @@ export default function Incomes() {
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Pemasukan</h1>
           <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1 italic">Audit Periode & Rekap Penjualan</p>
         </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setIsModalOpen(true);
-          }}
-          className="w-full sm:w-auto bg-orange-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-orange-600 shadow-xl shadow-orange-500/20 transition-all active:scale-95"
-        >
-          <Plus className="w-5 h-5" />
-          Input Pendapatan
-        </button>
+        {canModify && (
+          <button
+            onClick={() => {
+              resetForm();
+              setIsModalOpen(true);
+            }}
+            className="w-full sm:w-auto bg-orange-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-orange-600 shadow-xl shadow-orange-500/20 transition-all active:scale-95"
+          >
+            <Plus className="w-5 h-5" />
+            Input Pendapatan
+          </button>
+        )}
+        {isSuperAdmin && (
+          <div className="flex items-center gap-2 px-6 py-4 bg-purple-500/10 border border-purple-500/20 rounded-[1.5rem]">
+            <Eye className="w-5 h-5 text-purple-500" />
+            <span className="text-[10px] font-black text-purple-500 uppercase tracking-widest">View Only Mode</span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -375,20 +386,22 @@ export default function Incomes() {
                   </div>
                   <div className="flex items-center justify-between w-full sm:w-auto gap-4 sm:pl-4 border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-slate-800 pt-4 sm:pt-0">
                     <p className={`text-xl font-black ${item.type === 'POS' ? 'text-green-700 dark:text-green-400' : 'text-green-600 dark:text-green-500'}`}>+{formatCurrency(item.amount)}</p>
-                    <div className="flex items-center gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleEdit(item); }}
-                        className="p-3 text-slate-300 hover:text-orange-500 transition-colors"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); deleteItem(item.id, item.type); }}
-                        className="p-3 text-slate-300 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
+                    {canModify && (
+                      <div className="flex items-center gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleEdit(item); }}
+                          className="p-3 text-slate-300 hover:text-orange-500 transition-colors"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteItem(item.id, item.type); }}
+                          className="p-3 text-slate-300 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))

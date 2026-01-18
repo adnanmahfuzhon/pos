@@ -1,14 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role
+  branchId  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  branch    Branch?  @relation(fields: [branchId], references: [id])
 }
 
 model Ingredient {
-  id           String   @id @default(uuid())
+  id           String              @id @default(uuid())
   code         String
   name         String
   type         String
@@ -16,22 +28,23 @@ model Ingredient {
   pricePerUnit Float
   stock        Float
   minStock     Float
-  recipe       Json?
   priceHistory Json?
-  
-  // Relations
+  recipe       Json?
+  branchId     String
+  branch       Branch              @relation(fields: [branchId], references: [id])
   products     ProductIngredient[]
 }
 
 model Product {
-  id            String   @id @default(uuid())
+  id            String              @id @default(uuid())
   name          String
   price         Float
-  channelPrices Json     @default("{}")
   category      String
   isActive      Boolean
   imageUrl      String?
-
+  channelPrices Json                @default("{}")
+  branchId      String
+  branch        Branch              @relation(fields: [branchId], references: [id])
   ingredients   ProductIngredient[]
 }
 
@@ -40,21 +53,19 @@ model ProductIngredient {
   productId    String
   ingredientId String
   quantity     Float
-
-  product      Product    @relation(fields: [productId], references: [id])
   ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  product      Product    @relation(fields: [productId], references: [id])
 }
 
 model Sale {
-  id            String   @id @default(uuid())
-  timestamp     Float    // Keeping as number/timestamp to match frontend
+  id            String       @id @default(uuid())
+  timestamp     Float
   totalAmount   Float
   totalHPP      Float
   paymentMethod String
   channel       String
-  branchId      String   @default("default")
-  
-  branch        Branch   @relation(fields: [branchId], references: [id])
+  branchId      String
+  branch        Branch       @relation(fields: [branchId], references: [id])
   details       SaleDetail[]
 }
 
@@ -65,7 +76,6 @@ model SaleDetail {
   quantity    Float
   priceAtSale Float
   hppAtSale   Float
-
   sale        Sale   @relation(fields: [saleId], references: [id])
 }
 
@@ -77,8 +87,7 @@ model Expense {
   amount             Float
   linkedIngredientId String?
   quantity           Float?
-  branchId           String  @default("default")
-  
+  branchId           String
   branch             Branch  @relation(fields: [branchId], references: [id])
 }
 
@@ -88,16 +97,23 @@ model Income {
   category   String
   sourceName String
   amount     Float
-  branchId   String @default("default")
-  
+  branchId   String
   branch     Branch @relation(fields: [branchId], references: [id])
 }
 
 model Branch {
-  id       String    @id @default(uuid())
-  name     String
-  
-  sales    Sale[]
-  expenses Expense[]
-  incomes  Income[]
+  id          String       @id @default(uuid())
+  name        String       @unique
+  expenses    Expense[]
+  incomes     Income[]
+  ingredients Ingredient[]
+  products    Product[]
+  sales       Sale[]
+  users       User[]
+}
+
+enum Role {
+  SUPER_ADMIN
+  MANAGER
+  STAFF
 }

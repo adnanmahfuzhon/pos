@@ -27,7 +27,8 @@ import {
 import { Product, Ingredient, Sale, PaymentMethod, SalesChannel } from '../types';
 import SkeletonPOS from '../components/SkeletonPOS';
 import { useToast } from '../context/ToastContext';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Loader2, Eye } from 'lucide-react';
 
 export default function POS() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -43,18 +44,21 @@ export default function POS() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const { showToast, updateToast } = useToast();
+  const { canEdit, isSuperAdmin, selectedBranchId } = useAuth();
+  const canCheckout = canEdit('pos');
 
   useEffect(() => {
     setIsLoading(true);
+    const branchArgs = selectedBranchId || undefined;
     Promise.all([
-      getProducts().then(products => products.filter(p => p.isActive)),
-      getIngredients()
+      getProducts(branchArgs).then(products => products.filter(p => p.isActive)),
+      getIngredients(branchArgs)
     ]).then(([products, ingredients]) => {
       setProducts(products);
       setIngredients(ingredients);
     }).catch(console.error)
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [selectedBranchId]);
 
   // Auto-switch payment method when channel changes
   useEffect(() => {
@@ -235,6 +239,12 @@ export default function POS() {
             <div>
               <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase leading-none">Menu Console</h1>
               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-2 italic">Mode: {salesChannel}</p>
+              {isSuperAdmin && (
+                <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 rounded-xl w-fit">
+                  <Eye className="w-3 h-3 text-purple-500" />
+                  <span className="text-[9px] font-black text-purple-500 uppercase tracking-widest">View Only Mode</span>
+                </div>
+              )}
             </div>
             <div className="relative w-full md:max-w-xs">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -453,14 +463,21 @@ export default function POS() {
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Bayar</span>
               <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{formatCurrency(totalAmount)}</span>
             </div>
-            <button
-              onClick={handleCheckout}
-              disabled={!isCartValid || isProcessing}
-              className={`w-full py-6 rounded-3xl font-black text-[11px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-xl ${(!isCartValid || isProcessing) ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-950 dark:bg-orange-500 text-white hover:bg-black shadow-orange-500/20 active:scale-95'}`}
-            >
-              {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Proses Pesanan'}
-              {!isProcessing && isCartValid && <ChevronRight className="w-4 h-4" />}
-            </button>
+            {canCheckout ? (
+              <button
+                onClick={handleCheckout}
+                disabled={!isCartValid || isProcessing}
+                className={`w-full py-6 rounded-3xl font-black text-[11px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-xl ${(!isCartValid || isProcessing) ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-slate-950 dark:bg-orange-500 text-white hover:bg-black shadow-orange-500/20 active:scale-95'}`}
+              >
+                {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Proses Pesanan'}
+                {!isProcessing && isCartValid && <ChevronRight className="w-4 h-4" />}
+              </button>
+            ) : (
+              <div className="w-full py-6 rounded-3xl bg-purple-500/10 border-2 border-dashed border-purple-500/30 flex items-center justify-center gap-3">
+                <Eye className="w-5 h-5 text-purple-500" />
+                <span className="text-[11px] font-black text-purple-500 uppercase tracking-widest">Mode Lihat Saja</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

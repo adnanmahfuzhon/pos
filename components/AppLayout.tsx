@@ -11,25 +11,36 @@ import {
     Coffee,
     TrendingUp,
     Moon,
-    Sun
+    Sun,
+    LogOut,
+    Users,
+    Building2,
+    ChevronDown,
+    Eye
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const Sidebar = ({ isOpen, toggle, theme, toggleTheme, router }: {
+interface NavItem {
+    icon: any;
+    label: string;
+    path: string;
+    menuKey?: string;
+    viewOnly?: boolean;
+}
+
+const Sidebar = ({ isOpen, toggle, theme, toggleTheme, router, navItems, user, branch, onLogout, isSuperAdmin, selectedBranchName }: {
     isOpen: boolean;
     toggle: () => void;
     theme: 'light' | 'dark';
     toggleTheme: () => void;
     router: any;
+    navItems: NavItem[];
+    user: any;
+    branch: any;
+    onLogout: () => void;
+    isSuperAdmin: boolean;
+    selectedBranchName: string | null;
 }) => {
-
-    const navItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-        { icon: ShoppingCart, label: 'Kasir (POS)', path: '/POS' },
-        { icon: Coffee, label: 'Daftar Menu', path: '/Products' },
-        { icon: Milk, label: 'Gudang Bahan', path: '/Ingredients' },
-        { icon: TrendingUp, label: 'Pemasukan', path: '/Incomes' },
-        { icon: Receipt, label: 'Pengeluaran', path: '/Expenses' },
-    ];
 
     return (
         <>
@@ -60,9 +71,21 @@ const Sidebar = ({ isOpen, toggle, theme, toggleTheme, router }: {
                     </button>
                 </div>
 
-                <nav className="p-4 space-y-1">
+                {/* Branch indicator for Super Admin */}
+                {isSuperAdmin && selectedBranchName && (
+                    <div className="px-4 py-3 bg-orange-500/10 border-b border-orange-500/20">
+                        <div className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-orange-500" />
+                            <span className="text-xs font-black text-orange-500 uppercase tracking-wide truncate">
+                                {selectedBranchName}
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-220px)]">
                     {navItems.map((item) => {
-                        const isActive = router.pathname === item.path;
+                        const isActive = router.pathname === item.path || router.pathname.toLowerCase() === item.path.toLowerCase();
                         return (
                             <Link
                                 key={item.path}
@@ -77,21 +100,35 @@ const Sidebar = ({ isOpen, toggle, theme, toggleTheme, router }: {
                             >
                                 <item.icon className="w-5 h-5" />
                                 <span className="font-semibold text-sm">{item.label}</span>
+                                {item.viewOnly && (
+                                    <Eye className="w-3 h-3 ml-auto opacity-50" />
+                                )}
                             </Link>
                         )
                     })}
                 </nav>
 
-                <div className={`absolute bottom-0 left-0 w-full p-6 border-t ${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-100'}`}>
-                    <div className="flex items-center gap-3">
+                <div className={`absolute bottom-0 left-0 w-full p-4 border-t ${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-100'}`}>
+                    <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-full bg-orange-500/10 dark:bg-slate-800 flex items-center justify-center border-2 border-white dark:border-slate-700 shadow-sm">
                             <User className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                         </div>
-                        <div>
-                            <p className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Administrator</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sistem Online</p>
+                        <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-bold truncate ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                                {user?.name || 'User'}
+                            </p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                {user?.role?.replace('_', ' ') || 'Guest'}
+                            </p>
                         </div>
                     </div>
+                    <button
+                        onClick={onLogout}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl text-xs font-bold uppercase tracking-wide transition-colors"
+                    >
+                        <LogOut className="w-4 h-4" />
+                        Keluar
+                    </button>
                 </div>
             </aside>
         </>
@@ -100,8 +137,17 @@ const Sidebar = ({ isOpen, toggle, theme, toggleTheme, router }: {
 
 export default function AppLayout({ children }: { children: ReactNode }) {
     const router = useRouter();
+    const { isAuthenticated, isLoading, user, branch, logout, canView, isSuperAdmin, selectedBranchId } = useAuth();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+    const [branches, setBranches] = useState<any[]>([]);
+
+    // Redirect to login if not authenticated
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            router.push('/login');
+        }
+    }, [isLoading, isAuthenticated, router]);
 
     // Handle hydration mismatch by waiting for mount
     useEffect(() => {
@@ -118,9 +164,100 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         localStorage.setItem('pos_theme', theme);
     }, [theme]);
 
+    // Fetch branches for Super Admin
+    useEffect(() => {
+        if (isSuperAdmin && isAuthenticated) {
+            fetch('/api/branches')
+                .then(res => res.json())
+                .then(data => setBranches(Array.isArray(data) ? data : []))
+                .catch(console.error);
+        }
+    }, [isSuperAdmin, isAuthenticated]);
+
     const toggleTheme = () => {
         setTheme(prev => prev === 'light' ? 'dark' : 'light');
     };
+
+    // Build navigation items based on role
+    const navItems: NavItem[] = [];
+
+    if (canView('dashboard')) {
+        navItems.push({ icon: LayoutDashboard, label: 'Dashboard', path: '/', menuKey: 'dashboard' });
+    }
+
+    if (canView('pos')) {
+        navItems.push({
+            icon: ShoppingCart,
+            label: isSuperAdmin ? 'Lihat POS' : 'Kasir (POS)',
+            path: '/pos',
+            viewOnly: isSuperAdmin
+        });
+    }
+
+    if (canView('products')) {
+        navItems.push({
+            icon: Coffee,
+            label: isSuperAdmin ? 'Lihat Menu' : 'Daftar Menu',
+            path: '/products',
+            viewOnly: isSuperAdmin
+        });
+    }
+
+    if (canView('ingredients')) {
+        navItems.push({
+            icon: Milk,
+            label: isSuperAdmin ? 'Lihat Gudang' : 'Gudang Bahan',
+            path: '/ingredients',
+            viewOnly: isSuperAdmin
+        });
+    }
+
+    if (canView('incomes')) {
+        navItems.push({
+            icon: TrendingUp,
+            label: isSuperAdmin ? 'Lihat Pemasukan' : 'Pemasukan',
+            path: '/incomes',
+            viewOnly: isSuperAdmin
+        });
+    }
+
+    if (canView('expenses')) {
+        navItems.push({
+            icon: Receipt,
+            label: isSuperAdmin ? 'Lihat Pengeluaran' : 'Pengeluaran',
+            path: '/expenses',
+            viewOnly: isSuperAdmin
+        });
+    }
+
+    if (canView('users')) {
+        navItems.push({ icon: Users, label: 'Manajemen User', path: '/users' });
+    }
+
+    if (canView('branches')) {
+        navItems.push({ icon: Building2, label: 'Manajemen Cabang', path: '/branches' });
+    }
+
+    // Get selected branch name
+    const selectedBranchName = isSuperAdmin
+        ? branches.find(b => b.id === selectedBranchId)?.name || branch?.name
+        : branch?.name;
+
+    // Show loading while checking auth
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-950">
+                <div className="animate-pulse flex flex-col items-center gap-4">
+                    <Coffee className="w-12 h-12 text-orange-500" />
+                    <span className="text-slate-400 text-sm">Loading...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (!isAuthenticated) {
+        return null;
+    }
 
     return (
         <div className={`min-h-screen flex transition-colors duration-300 ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
@@ -130,19 +267,19 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 theme={theme}
                 toggleTheme={toggleTheme}
                 router={router}
+                navItems={navItems}
+                user={user}
+                branch={branch}
+                onLogout={logout}
+                isSuperAdmin={isSuperAdmin}
+                selectedBranchName={selectedBranchName}
             />
 
             {/* Bottom Navigation for Mobile */}
             <nav className={`fixed bottom-0 left-0 right-0 z-[100] lg:hidden flex items-center justify-around p-3 border-t backdrop-blur-xl transition-all
               ${theme === 'dark' ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-100'}`}>
-                {[
-                    { icon: LayoutDashboard, label: 'Dash', path: '/' },
-                    { icon: ShoppingCart, label: 'POS', path: '/POS' },
-                    { icon: Milk, label: 'Gudang', path: '/Ingredients' },
-                    { icon: TrendingUp, label: 'Income', path: '/Incomes' },
-                    { icon: Receipt, label: 'Biaya', path: '/Expenses' }
-                ].map((item, idx) => {
-                    const isActive = router.pathname === item.path;
+                {navItems.slice(0, 5).map((item, idx) => {
+                    const isActive = router.pathname === item.path || router.pathname.toLowerCase() === item.path.toLowerCase();
                     const Icon = item.icon;
                     return (
                         <div key={idx} className="flex flex-col items-center">

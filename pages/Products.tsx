@@ -5,7 +5,8 @@ import { getProducts, getIngredients, createProduct, updateProduct, deleteProduc
 import { Product, Ingredient, ProductIngredient, SalesChannel } from '../types';
 import SkeletonProducts from '../components/SkeletonProducts';
 import { useToast } from '../context/ToastContext';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Loader2, Eye } from 'lucide-react';
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -16,6 +17,8 @@ export default function Products() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { showToast, updateToast } = useToast();
+  const { canEdit, isSuperAdmin, selectedBranchId } = useAuth();
+  const canModify = canEdit('products');
 
   // Form states
   const [name, setName] = useState('');
@@ -33,16 +36,21 @@ export default function Products() {
   const [ingSearch, setIngSearch] = useState('');
 
   useEffect(() => {
+    // For SA, wait until branch is selected? Or allow loading without ID (global)?
+    // User request: "pastikan akun tersebut memilih cabang nya dulu"
+    // So if isSuperAdmin and !selectedBranchId, maybe don't fetch or fetch empty?
+    // Let's fetch with undefined if not set, let the store handle it (API optional).
+
     setIsLoading(true);
     Promise.all([
-      getProducts(),
-      getIngredients()
+      getProducts(selectedBranchId || undefined),
+      getIngredients(selectedBranchId || undefined)
     ]).then(([products, ingredients]) => {
       setProducts(products);
       setIngredients(ingredients);
     }).catch(console.error)
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [selectedBranchId]);
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -174,13 +182,21 @@ export default function Products() {
               className="w-full sm:w-64 pl-12 pr-6 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none text-xs font-bold focus:ring-2 focus:ring-orange-500/20"
             />
           </div>
-          <button
-            onClick={() => openModal()}
-            className="bg-orange-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-orange-600 shadow-xl shadow-orange-500/20 transition-all active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            Tambah Menu
-          </button>
+          {canModify && (
+            <button
+              onClick={() => openModal()}
+              className="bg-orange-500 text-white px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-orange-600 shadow-xl shadow-orange-500/20 transition-all active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              Tambah Menu
+            </button>
+          )}
+          {isSuperAdmin && (
+            <div className="flex items-center gap-2 px-4 py-3 bg-purple-500/10 border border-purple-500/20 rounded-2xl">
+              <Eye className="w-4 h-4 text-purple-500" />
+              <span className="text-[10px] font-black text-purple-500 uppercase tracking-widest">View Only</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -237,20 +253,22 @@ export default function Products() {
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => openModal(product)}
-                          className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-orange-500 rounded-xl transition-all hover:shadow-md"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => deleteProductFn(product.id)}
-                          className="p-3 bg-red-50 dark:bg-red-500/10 text-red-400 hover:text-red-500 rounded-xl transition-all hover:shadow-md"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      {canModify && (
+                        <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => openModal(product)}
+                            className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-orange-500 rounded-xl transition-all hover:shadow-md"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteProductFn(product.id)}
+                            className="p-3 bg-red-50 dark:bg-red-500/10 text-red-400 hover:text-red-500 rounded-xl transition-all hover:shadow-md"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

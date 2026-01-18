@@ -3,20 +3,50 @@ import { Ingredient, Product, Sale, Expense, Income } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
-const fetchJson = async (url: string, options?: RequestInit) => {
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+const getAuthHeaders = () => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('pos_token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  }
+  return {};
+};
+
+const fetchJson = async (url: string, options: RequestInit = {}) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...getAuthHeaders(),
+    ...options.headers,
+  };
+
+  const res = await fetch(url, { ...options, headers });
+  if (!res.ok) {
+    // Attempt to read error message from body
+    try {
+      const errBody = await res.json();
+      throw new Error(errBody.error || `API Error: ${res.statusText}`);
+    } catch (e: any) {
+      throw new Error(e.message || `API Error: ${res.statusText}`);
+    }
+  }
   return res.json();
 };
 
-export const getIngredients = async (): Promise<Ingredient[]> => {
-  return fetchJson(`${API_URL}/ingredients`);
+const appendQuery = (url: string, params: Record<string, string | undefined>) => {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) searchParams.append(key, value);
+  });
+  const queryString = searchParams.toString();
+  return queryString ? `${url}?${queryString}` : url;
+};
+
+export const getIngredients = async (branchId?: string): Promise<Ingredient[]> => {
+  return fetchJson(appendQuery(`${API_URL}/ingredients`, { branchId }));
 };
 
 export const createIngredient = async (data: Ingredient): Promise<Ingredient> => {
   return fetchJson(`${API_URL}/ingredients`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
 };
@@ -24,7 +54,6 @@ export const createIngredient = async (data: Ingredient): Promise<Ingredient> =>
 export const updateIngredient = async (id: string, data: Partial<Ingredient>): Promise<Ingredient> => {
   return fetchJson(`${API_URL}/ingredients/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
 };
@@ -36,26 +65,17 @@ export const deleteIngredient = async (id: string): Promise<void> => {
 export const produceIngredient = async (ingredientId: string, quantity: number): Promise<Ingredient> => {
   return fetchJson(`${API_URL}/ingredients/produce`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ingredientId, quantity })
   });
 };
 
-// Compatibility shim for old "saveIngredients" (bulk save)
-// Warning: This implementation loops and creates/updates, which is slow.
-// We should refactor the app to use atomic updates.
-// For now, let's just log a warning or try to implement it if strictly needed.
-// But we agreed to refactor the frontend. So I won't export saveIngredients anymore.
-// Or I can keep it but make it just do nothing/log error to force refactor.
-
-export const getProducts = async (): Promise<Product[]> => {
-  return fetchJson(`${API_URL}/products`);
+export const getProducts = async (branchId?: string): Promise<Product[]> => {
+  return fetchJson(appendQuery(`${API_URL}/products`, { branchId }));
 };
 
 export const createProduct = async (data: Product): Promise<Product> => {
   return fetchJson(`${API_URL}/products`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
 };
@@ -63,7 +83,6 @@ export const createProduct = async (data: Product): Promise<Product> => {
 export const updateProduct = async (id: string, data: Partial<Product>): Promise<Product> => {
   return fetchJson(`${API_URL}/products/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
 };
@@ -72,15 +91,13 @@ export const deleteProduct = async (id: string): Promise<void> => {
   return fetchJson(`${API_URL}/products/${id}`, { method: 'DELETE' });
 };
 
-export const getSales = async (): Promise<Sale[]> => {
-  return fetchJson(`${API_URL}/sales`);
+export const getSales = async (branchId?: string): Promise<Sale[]> => {
+  return fetchJson(appendQuery(`${API_URL}/sales`, { branchId }));
 };
 
-// Sales are append-only usually
 export const createSale = async (data: Sale): Promise<Sale> => {
   return fetchJson(`${API_URL}/sales`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
 };
@@ -88,7 +105,6 @@ export const createSale = async (data: Sale): Promise<Sale> => {
 export const updateSale = async (id: string, data: Partial<Sale>): Promise<Sale> => {
   return fetchJson(`${API_URL}/sales/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
 };
@@ -97,14 +113,13 @@ export const deleteSale = async (id: string): Promise<void> => {
   return fetchJson(`${API_URL}/sales/${id}`, { method: 'DELETE' });
 };
 
-export const getExpenses = async (): Promise<Expense[]> => {
-  return fetchJson(`${API_URL}/expenses`);
+export const getExpenses = async (branchId?: string): Promise<Expense[]> => {
+  return fetchJson(appendQuery(`${API_URL}/expenses`, { branchId }));
 };
 
 export const createExpense = async (data: Expense): Promise<Expense> => {
   return fetchJson(`${API_URL}/expenses`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
 };
@@ -113,14 +128,13 @@ export const deleteExpense = async (id: string): Promise<void> => {
   return fetchJson(`${API_URL}/expenses/${id}`, { method: 'DELETE' });
 };
 
-export const getIncomes = async (): Promise<Income[]> => {
-  return fetchJson(`${API_URL}/incomes`);
+export const getIncomes = async (branchId?: string): Promise<Income[]> => {
+  return fetchJson(appendQuery(`${API_URL}/incomes`, { branchId }));
 };
 
 export const createIncome = async (data: Income): Promise<Income> => {
   return fetchJson(`${API_URL}/incomes`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
 };
@@ -128,7 +142,6 @@ export const createIncome = async (data: Income): Promise<Income> => {
 export const updateIncome = async (id: string, data: Partial<Income>): Promise<Income> => {
   return fetchJson(`${API_URL}/incomes/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
 };
@@ -137,7 +150,6 @@ export const deleteIncome = async (id: string): Promise<void> => {
   return fetchJson(`${API_URL}/incomes/${id}`, { method: 'DELETE' });
 };
 
-// Utility
 export const calculateHPP = (product: Product, ingredients: Ingredient[]): number => {
   if (!product.ingredients) return 0;
   return product.ingredients.reduce((total, pIng) => {
