@@ -56,6 +56,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     if (!effectiveBranchId || id === effectiveBranchId) {
                         delete data.createdAt;
                         delete data.updatedAt;
+                        // @ts-ignore
+                        delete data._count;
                         await tx.branch.upsert({
                             where: { id: id },
                             update: data,
