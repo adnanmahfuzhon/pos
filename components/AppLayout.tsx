@@ -59,9 +59,7 @@ const Sidebar = ({ isOpen, toggle, theme, toggleTheme, router, navItems, user, b
                         <div className="p-2 bg-orange-500 rounded-lg shadow-lg shadow-orange-500/20">
                             <ShoppingCart className="w-6 h-6 text-white" />
                         </div>
-                        <h1 className="text-xl font-bold tracking-tight">
-                            Flavor<span className="text-orange-500">POS</span>
-                        </h1>
+                        Flavor<span className="text-orange-500">POS</span> <span className="text-xs text-gray-500">v2.1</span>
                     </div>
                     <button
                         onClick={toggleTheme}
