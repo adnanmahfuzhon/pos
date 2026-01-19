@@ -30,13 +30,10 @@ export default function Incomes() {
   const canModify = canEdit('incomes');
 
   // Date filter states
-  const today = (() => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  })();
+  import { formatDateToWIB } from '../lib/date';
+
+  // Date filter states
+  const today = formatDateToWIB(new Date());
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
 
@@ -202,7 +199,7 @@ export default function Incomes() {
 
   const filtered = useMemo(() => {
     return combinedList.filter(item => {
-      const itemDate = new Date(item.timestamp).toISOString().split('T')[0];
+      const itemDate = formatDateToWIB(item.timestamp);
       const matchesSearch = item.sourceName.toLowerCase().includes(search.toLowerCase()) ||
         item.category.toLowerCase().includes(search.toLowerCase());
       const matchesDate = itemDate >= startDate && itemDate <= endDate;

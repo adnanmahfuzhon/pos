@@ -87,13 +87,7 @@ export default function Dashboard() {
   }, [isSuperAdmin, isAuthenticated]);
 
   // Date Filter states
-  const today = (() => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  })();
+  const today = formatDateToWIB(new Date());
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
 
@@ -129,24 +123,24 @@ export default function Dashboard() {
   // Filter Data based on Date Range AND Branch
   const filteredSales = useMemo(() =>
     sales.filter(s => {
-      const d = new Date(s.timestamp).toISOString().split('T')[0];
-      const matchesDate = d >= startDate && d <= endDate;
+      const date = formatDateToWIB(s.timestamp);
+      const matchesDate = date >= startDate && date <= endDate;
       const matchesBranch = !effectiveBranchId || s.branchId === effectiveBranchId || (effectiveBranchId === 'default' && !s.branchId); // Handle legacy data
       return matchesDate && matchesBranch;
     }), [sales, startDate, endDate, effectiveBranchId]);
 
   const filteredExpenses = useMemo(() =>
     expenses.filter(e => {
-      const d = new Date(e.timestamp).toISOString().split('T')[0];
-      const matchesDate = d >= startDate && d <= endDate;
+      const date = formatDateToWIB(e.timestamp);
+      const matchesDate = date >= startDate && date <= endDate;
       const matchesBranch = !effectiveBranchId || e.branchId === effectiveBranchId || (effectiveBranchId === 'default' && !e.branchId);
       return matchesDate && matchesBranch;
     }), [expenses, startDate, endDate, effectiveBranchId]);
 
   const filteredIncomes = useMemo(() =>
     incomes.filter(i => {
-      const d = new Date(i.timestamp).toISOString().split('T')[0];
-      const matchesDate = d >= startDate && d <= endDate;
+      const date = formatDateToWIB(i.timestamp);
+      const matchesDate = date >= startDate && date <= endDate;
       const matchesBranch = !effectiveBranchId || i.branchId === effectiveBranchId || (effectiveBranchId === 'default' && !i.branchId);
       return matchesDate && matchesBranch;
     }), [incomes, startDate, endDate, effectiveBranchId]);
@@ -410,6 +404,47 @@ export default function Dashboard() {
           color="orange"
         />
       </header>
+
+      {/* SUPER ADMIN: Branch Performance Breakdown */}
+      {isSuperAdmin && !selectedBranchId && (
+        <div className="mb-8 p-8 bg-slate-900 rounded-[3rem] text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-12 opacity-10">
+            <Building2 className="w-64 h-64" />
+          </div>
+          <h2 className="text-2xl font-black uppercase tracking-tight mb-8 relative z-10">Performa Cabang</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10">
+            {(() => {
+              // Group sales by branch
+              const branchStats: Record<string, number> = {};
+              filteredSales.forEach(sale => {
+                const bId = sale.branchId || 'Unknown';
+                branchStats[bId] = (branchStats[bId] || 0) + sale.totalAmount;
+              });
+
+              // Map to branch names (using branches state or fetch)
+              // Since branches state is not available here easily (it's in Layout), we just show IDs or need to fetch branches here too.
+              // Ideally we pass branches as prop or context, but for speed, let's just use what we have or try to match if possible.
+              // Actually, we can assume AuthContext might have access or we fetch it.
+              // Let's just list by ID first or "Cabang ..."
+
+              return Object.entries(branchStats).map(([bId, total]) => (
+                <div key={bId} className="p-6 bg-white/10 backdrop-blur-md rounded-3xl border border-white/10 hover:bg-white/20 transition-all">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center font-bold text-xs uppercase">
+                      {bId.substring(0, 2)}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Cabang ID</p>
+                      <p className="font-black text-sm uppercase truncate font-mono">{bId}</p>
+                    </div>
+                  </div>
+                  <p className="text-2xl font-black tracking-tighter">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(total)}</p>
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* Primary Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">

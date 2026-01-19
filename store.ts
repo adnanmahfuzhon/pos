@@ -30,6 +30,9 @@ const fetchJson = async (url: string, options: RequestInit = {}) => {
       throw new Error(e.message || `API Error: ${res.statusText}`);
     }
   }
+  if (res.status === 204) {
+    return null;
+  }
   return res.json();
 };
 

@@ -257,6 +257,35 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         return null;
     }
 
+    // Super Admin Branch Selection Guard
+    const protectedRoutes = ['/pos', '/products', '/ingredients', '/incomes', '/expenses'];
+    const isProtectedRoute = protectedRoutes.some(route => router.pathname.startsWith(route));
+    const showBranchSelectionPrompt = isSuperAdmin && !selectedBranchId && isProtectedRoute;
+
+    if (showBranchSelectionPrompt) {
+        return (
+            <div className={`min-h-screen flex flex-col items-center justify-center p-8 text-center transition-colors duration-300 ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
+                <div className="max-w-md w-full bg-white dark:bg-slate-900 p-12 rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in duration-300">
+                    <div className="w-20 h-20 bg-orange-500 rounded-3xl mx-auto flex items-center justify-center shadow-lg shadow-orange-500/20 mb-8">
+                        <Building2 className="w-10 h-10 text-white animate-bounce" />
+                    </div>
+                    <h1 className="text-2xl font-black uppercase tracking-tight mb-4">Pilih Cabang Dulu</h1>
+                    <p className="text-slate-400 font-medium mb-8 leading-relaxed">
+                        Sebagai Super Admin, Anda harus memilih cabang spesifik sebelum mengakses menu POS, Gudang, atau Keuangan.
+                    </p>
+                    <div className="p-4 bg-orange-50 dark:bg-orange-500/10 rounded-2xl border border-orange-100 dark:border-orange-500/20">
+                        <p className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest">
+                            Silakan pilih cabang di Dashboard
+                        </p>
+                    </div>
+                    <Link href="/" className="mt-8 block w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform">
+                        Kembali ke Dashboard
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className={`min-h-screen flex transition-colors duration-300 ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
             <Sidebar
