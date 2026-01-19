@@ -60,7 +60,7 @@ import { useRouter } from 'next/router';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user, isSuperAdmin, selectedBranchId, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { user, isSuperAdmin, selectedBranchId, setSelectedBranchId, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [sales, setSales] = useState<Sale[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
@@ -391,19 +391,40 @@ export default function Dashboard() {
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 md:gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Dashboard Audit</h1>
-          <p className="text-slate-500 font-bold text-[10px] md:text-xs uppercase tracking-[0.2em] mt-2 italic">Monitoring Laba & Sinkronisasi Database</p>
+          <p className="text-slate-500 font-bold text-[10px] md:text-xs uppercase tracking-[0.2em] mt-2 italic">
+            {isSuperAdmin && !selectedBranchId ? 'Overview Semua Cabang' : 'Monitoring Laba & Sinkronisasi Database'}
+          </p>
         </div>
 
-        {/* Date Filter Bar */}
-        <DateFilter
-          startDate={startDate}
-          endDate={endDate}
-          onFilterChange={(start, end) => {
-            setStartDate(start);
-            setEndDate(end);
-          }}
-          color="orange"
-        />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          {/* Super Admin Branch Selector */}
+          {isSuperAdmin && (
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-orange-500" />
+              <select
+                value={selectedBranchId || ''}
+                onChange={(e) => setSelectedBranchId(e.target.value || '')}
+                className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="">Semua Cabang</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Date Filter Bar */}
+          <DateFilter
+            startDate={startDate}
+            endDate={endDate}
+            onFilterChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }}
+            color="orange"
+          />
+        </div>
       </header>
 
       {/* SUPER ADMIN: Branch Performance Breakdown */}
@@ -416,30 +437,36 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10">
             {(() => {
               // Group sales by branch
-              const branchStats: Record<string, number> = {};
+              const branchStats: Record<string, { revenue: number; count: number }> = {};
               filteredSales.forEach(sale => {
                 const bId = sale.branchId || 'Unknown';
-                branchStats[bId] = (branchStats[bId] || 0) + sale.totalAmount;
+                if (!branchStats[bId]) branchStats[bId] = { revenue: 0, count: 0 };
+                branchStats[bId].revenue += sale.totalAmount;
+                branchStats[bId].count += 1;
               });
 
-              // Map to branch names (using branches state or fetch)
-              // Since branches state is not available here easily (it's in Layout), we just show IDs or need to fetch branches here too.
-              // Ideally we pass branches as prop or context, but for speed, let's just use what we have or try to match if possible.
-              // Actually, we can assume AuthContext might have access or we fetch it.
-              // Let's just list by ID first or "Cabang ..."
+              // Get branch name from branches state
+              const getBranchName = (id: string) => {
+                const branch = branches.find(b => b.id === id);
+                return branch?.name || id;
+              };
 
-              return Object.entries(branchStats).map(([bId, total]) => (
-                <div key={bId} className="p-6 bg-white/10 backdrop-blur-md rounded-3xl border border-white/10 hover:bg-white/20 transition-all">
+              return Object.entries(branchStats).map(([bId, stats]) => (
+                <div
+                  key={bId}
+                  className="p-6 bg-white/10 backdrop-blur-md rounded-3xl border border-white/10 hover:bg-white/20 transition-all cursor-pointer"
+                  onClick={() => setSelectedBranchId(bId)}
+                >
                   <div className="flex items-center gap-4 mb-3">
                     <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center font-bold text-xs uppercase">
-                      {bId.substring(0, 2)}
+                      {getBranchName(bId).substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Cabang ID</p>
-                      <p className="font-black text-sm uppercase truncate font-mono">{bId}</p>
+                      <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{stats.count} Transaksi</p>
+                      <p className="font-black text-sm uppercase truncate">{getBranchName(bId)}</p>
                     </div>
                   </div>
-                  <p className="text-2xl font-black tracking-tighter">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(total)}</p>
+                  <p className="text-2xl font-black tracking-tighter">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.revenue)}</p>
                 </div>
               ));
             })()}

@@ -135,10 +135,11 @@ const Sidebar = ({ isOpen, toggle, theme, toggleTheme, router, navItems, user, b
 
 export default function AppLayout({ children }: { children: ReactNode }) {
     const router = useRouter();
-    const { isAuthenticated, isLoading, user, branch, logout, canView, isSuperAdmin, selectedBranchId } = useAuth();
+    const { isAuthenticated, isLoading, user, branch, logout, canView, isSuperAdmin, selectedBranchId, setSelectedBranchId } = useAuth();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('dark');
     const [branches, setBranches] = useState<any[]>([]);
+    const [pendingBranchId, setPendingBranchId] = useState<string>(''); // For modal dropdown
 
     // Redirect to login if not authenticated
     useEffect(() => {
@@ -263,6 +264,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     const showBranchSelectionPrompt = isSuperAdmin && !selectedBranchId && isProtectedRoute;
 
     if (showBranchSelectionPrompt) {
+        const handleConfirmBranch = () => {
+            if (pendingBranchId) {
+                setSelectedBranchId(pendingBranchId);
+                // Page will auto-reload with correct branch context
+            }
+        };
+
         return (
             <div className={`min-h-screen flex flex-col items-center justify-center p-8 text-center transition-colors duration-300 ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
                 <div className="max-w-md w-full bg-white dark:bg-slate-900 p-12 rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in duration-300">
@@ -271,14 +279,33 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     </div>
                     <h1 className="text-2xl font-black uppercase tracking-tight mb-4">Pilih Cabang Dulu</h1>
                     <p className="text-slate-400 font-medium mb-8 leading-relaxed">
-                        Sebagai Super Admin, Anda harus memilih cabang spesifik sebelum mengakses menu POS, Gudang, atau Keuangan.
+                        Sebagai Super Admin, Anda harus memilih cabang spesifik sebelum mengakses menu ini.
                     </p>
-                    <div className="p-4 bg-orange-50 dark:bg-orange-500/10 rounded-2xl border border-orange-100 dark:border-orange-500/20">
-                        <p className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest">
-                            Silakan pilih cabang di Dashboard
-                        </p>
-                    </div>
-                    <Link href="/" className="mt-8 block w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform">
+
+                    {/* Branch Dropdown */}
+                    <select
+                        value={pendingBranchId}
+                        onChange={(e) => setPendingBranchId(e.target.value)}
+                        className="w-full p-4 mb-4 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                        <option value="">-- Pilih Cabang --</option>
+                        {branches.map((b) => (
+                            <option key={b.id} value={b.id}>{b.name}</option>
+                        ))}
+                    </select>
+
+                    <button
+                        onClick={handleConfirmBranch}
+                        disabled={!pendingBranchId}
+                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${pendingBranchId
+                                ? 'bg-orange-500 text-white hover:bg-orange-600 hover:scale-105'
+                                : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+                            }`}
+                    >
+                        Konfirmasi & Lanjutkan
+                    </button>
+
+                    <Link href="/" className="mt-4 block w-full py-3 text-slate-400 hover:text-orange-500 text-xs font-bold uppercase tracking-widest transition-colors">
                         Kembali ke Dashboard
                     </Link>
                 </div>
