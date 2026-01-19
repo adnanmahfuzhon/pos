@@ -29,6 +29,9 @@ import SkeletonPOS from '../components/SkeletonPOS';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { Loader2, Eye } from 'lucide-react';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { addToQueue } from '../lib/offlineQueue';
+import { setCachedProducts, setCachedIngredients, getCachedProducts, getCachedIngredients, isCacheValid } from '../lib/offlineStorage';
 
 export default function POS() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -46,6 +49,7 @@ export default function POS() {
   const { showToast, updateToast } = useToast();
   const { canEdit, isSuperAdmin, selectedBranchId } = useAuth();
   const canCheckout = canEdit('pos');
+  const isOnline = useOnlineStatus();
 
   useEffect(() => {
     setIsLoading(true);
@@ -191,13 +195,13 @@ export default function POS() {
     });
 
     const newSale: Sale = {
-      id: `TRX-${Date.now()}`,
+      id: `TRX-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
       timestamp: Date.now(),
       totalAmount,
       totalHPP,
       paymentMethod,
       channel: salesChannel,
-      branchId: selectedBranchId || 'default', // FIXED: Use dynamic branch ID
+      branchId: selectedBranchId || 'default',
       details: cart.map(item => ({
         productId: item.product.id,
         quantity: item.quantity,
@@ -207,20 +211,46 @@ export default function POS() {
     };
 
     try {
-      await createSale(newSale);
+      if (isOnline) {
+        // Online mode - send to API directly
+        await createSale(newSale);
 
-      // Refresh ingredients to get updated stock
-      const updatedIngredients = await getIngredients();
-      setIngredients(updatedIngredients);
+        // Refresh ingredients to get updated stock
+        const updatedIngredients = await getIngredients();
+        setIngredients(updatedIngredients);
 
-      updateToast(toastId, 'Transaksi Berhasil!', 'success');
+        updateToast(toastId, 'Transaksi Berhasil!', 'success');
+      } else {
+        // Offline mode - save to queue
+        addToQueue({
+          id: newSale.id,
+          type: 'sale',
+          data: newSale
+        });
+
+        updateToast(toastId, 'Disimpan offline, akan sync otomatis', 'success');
+      }
+
       setCart([]);
       setIsMobileCartOpen(false);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (e) {
       console.error("Checkout failed", e);
-      updateToast(toastId, 'Gagal memproses pesanan', 'error');
+
+      // Fallback to offline queue if API fails
+      if (!isOnline) {
+        addToQueue({
+          id: newSale.id,
+          type: 'sale',
+          data: newSale
+        });
+        updateToast(toastId, 'Disimpan offline, akan sync otomatis', 'success');
+        setCart([]);
+        setIsMobileCartOpen(false);
+      } else {
+        updateToast(toastId, 'Gagal memproses pesanan', 'error');
+      }
     } finally {
       setIsProcessing(false);
     }

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import OfflineSyncBanner from './OfflineSyncBanner';
 
 interface NavItem {
     icon: any;
@@ -374,6 +375,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     {children}
                 </div>
             </main>
+
+            {/* Offline Sync Banner */}
+            <OfflineSyncBanner />
         </div>
     );
 }

@@ -5,7 +5,7 @@
 
 const QUEUE_KEY = 'flavorpos_offline_queue';
 
-interface QueuedItem {
+export interface QueuedItem {
     id: string;
     type: 'sale' | 'expense' | 'income';
     data: any;
