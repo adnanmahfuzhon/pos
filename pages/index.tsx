@@ -52,6 +52,7 @@ import {
 import { Ingredient, Sale, Expense, Income, Product } from '../types';
 
 import DateFilter from '../components/DateFilter';
+import { formatDateToWIB } from '../lib/date';
 
 import SkeletonDashboard from '../components/SkeletonDashboard';
 import { useAuth } from '../context/AuthContext';

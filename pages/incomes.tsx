@@ -10,6 +10,7 @@ import SkeletonTransactions from '../components/SkeletonTransactions';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { isBluetoothSupported, printReceipt, ReceiptData } from '../lib/thermalPrint';
+import { formatDateToWIB } from '../lib/date';
 
 export default function Incomes() {
   const [incomes, setIncomes] = useState<Income[]>([]);
@@ -28,9 +29,6 @@ export default function Incomes() {
   const { showToast, updateToast } = useToast();
   const { canEdit, isSuperAdmin, selectedBranchId } = useAuth();
   const canModify = canEdit('incomes');
-
-  // Date filter states
-  import { formatDateToWIB } from '../lib/date';
 
   // Date filter states
   const today = formatDateToWIB(new Date());

@@ -9,6 +9,7 @@ import SkeletonTransactions from '../components/SkeletonTransactions';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { Loader2, Save, Eye } from 'lucide-react';
+import { formatDateToWIB } from '../lib/date';
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -21,9 +22,6 @@ export default function Expenses() {
   const { showToast, updateToast } = useToast();
   const { canEdit, isSuperAdmin, selectedBranchId } = useAuth();
   const canModify = canEdit('expenses');
-
-  // Date filter states
-  import { formatDateToWIB } from '../lib/date';
 
   // Date filter states
   const today = formatDateToWIB(new Date());
