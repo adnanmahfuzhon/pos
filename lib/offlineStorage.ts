@@ -12,7 +12,6 @@ export interface CachedProduct {
     id: string;
     name: string;
     price: number;
-    hpp: number;
     category: string;
     isActive: boolean;
 }

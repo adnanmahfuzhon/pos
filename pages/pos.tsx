@@ -52,17 +52,88 @@ export default function POS() {
   const isOnline = useOnlineStatus();
 
   useEffect(() => {
-    setIsLoading(true);
-    const branchArgs = selectedBranchId || undefined;
-    Promise.all([
-      getProducts(branchArgs).then(products => products.filter(p => p.isActive)),
-      getIngredients(branchArgs)
-    ]).then(([products, ingredients]) => {
-      setProducts(products);
-      setIngredients(ingredients);
-    }).catch(console.error)
-      .finally(() => setIsLoading(false));
-  }, [selectedBranchId]);
+    const loadData = async () => {
+      setIsLoading(true);
+      const branchArgs = selectedBranchId || undefined;
+
+      try {
+        if (isOnline) {
+          // Online: fetch from API and cache
+          const [productsData, ingredientsData] = await Promise.all([
+            getProducts(branchArgs).then(products => products.filter(p => p.isActive)),
+            getIngredients(branchArgs)
+          ]);
+
+          setProducts(productsData);
+          setIngredients(ingredientsData);
+
+          // Cache for offline use
+          setCachedProducts(productsData.map(p => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            category: p.category,
+            isActive: p.isActive
+          })));
+          setCachedIngredients(ingredientsData.map(i => ({
+            id: i.id,
+            name: i.name,
+            stock: i.stock,
+            unit: i.unit,
+            pricePerUnit: i.pricePerUnit
+          })));
+        } else {
+          // Offline: use cached data
+          const cachedProducts = getCachedProducts();
+          const cachedIngredients = getCachedIngredients();
+
+          if (cachedProducts.length > 0) {
+            // Convert cached products back to full Product type (with defaults)
+            setProducts(cachedProducts.map(p => ({
+              id: p.id,
+              name: p.name,
+              price: p.price,
+              category: p.category,
+              isActive: p.isActive,
+              ingredients: [] // Required field - empty for offline
+            })));
+          }
+
+          if (cachedIngredients.length > 0) {
+            setIngredients(cachedIngredients.map(i => ({
+              id: i.id,
+              name: i.name,
+              stock: i.stock,
+              unit: i.unit,
+              pricePerUnit: i.pricePerUnit,
+              code: '', // Required field
+              type: 'Raw' as const, // Required field
+              minStock: 0
+            })));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load data:', error);
+
+        // Fallback to cache on error
+        const cachedProducts = getCachedProducts();
+        if (cachedProducts.length > 0) {
+          setProducts(cachedProducts.map(p => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            category: p.category,
+            isActive: p.isActive,
+            ingredients: []
+          })));
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [selectedBranchId, isOnline]);
 
   // Auto-switch payment method when channel changes
   useEffect(() => {
