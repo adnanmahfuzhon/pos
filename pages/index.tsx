@@ -438,6 +438,13 @@ export default function Dashboard() {
             {(() => {
               // Group sales by branch
               const branchStats: Record<string, { revenue: number; count: number }> = {};
+
+              // Initialize all branches with zero stats first
+              branches.forEach(b => {
+                branchStats[b.id] = { revenue: 0, count: 0 };
+              });
+
+              // Add sales data on top
               filteredSales.forEach(sale => {
                 const bId = sale.branchId || 'Unknown';
                 if (!branchStats[bId]) branchStats[bId] = { revenue: 0, count: 0 };
@@ -445,30 +452,27 @@ export default function Dashboard() {
                 branchStats[bId].count += 1;
               });
 
-              // Get branch name from branches state
-              const getBranchName = (id: string) => {
-                const branch = branches.find(b => b.id === id);
-                return branch?.name || id;
-              };
-
-              return Object.entries(branchStats).map(([bId, stats]) => (
-                <div
-                  key={bId}
-                  className="p-6 bg-white/10 backdrop-blur-md rounded-3xl border border-white/10 hover:bg-white/20 transition-all cursor-pointer"
-                  onClick={() => setSelectedBranchId(bId)}
-                >
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center font-bold text-xs uppercase">
-                      {getBranchName(bId).substring(0, 2).toUpperCase()}
+              return branches.map((branch) => {
+                const stats = branchStats[branch.id] || { revenue: 0, count: 0 };
+                return (
+                  <div
+                    key={branch.id}
+                    className="p-6 bg-white/10 backdrop-blur-md rounded-3xl border border-white/10 hover:bg-white/20 transition-all cursor-pointer"
+                    onClick={() => setSelectedBranchId(branch.id)}
+                  >
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center font-bold text-xs uppercase">
+                        {branch.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{stats.count} Transaksi</p>
+                        <p className="font-black text-sm uppercase truncate">{branch.name}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{stats.count} Transaksi</p>
-                      <p className="font-black text-sm uppercase truncate">{getBranchName(bId)}</p>
-                    </div>
+                    <p className="text-2xl font-black tracking-tighter">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.revenue)}</p>
                   </div>
-                  <p className="text-2xl font-black tracking-tighter">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.revenue)}</p>
-                </div>
-              ));
+                );
+              });
             })()}
           </div>
         </div>
