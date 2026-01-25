@@ -66,10 +66,16 @@ export default function Expenses() {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
-        setIsCameraActive(true);
-        startBarcodeDetection();
+        // Wait for video to be ready before playing
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().then(() => {
+            setIsCameraActive(true);
+            startBarcodeDetection();
+          }).catch(console.error);
+        };
       }
     } catch (err) {
+      console.error('Camera error:', err);
       showToast('Izin kamera diperlukan', 'error');
     }
   };
@@ -584,14 +590,17 @@ export default function Expenses() {
             <div className="p-8 space-y-6">
               {/* Camera View */}
               <div className="relative aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-slate-800">
-                {isCameraActive ? (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
+                {/* Video always rendered so ref is available */}
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`w-full h-full object-cover ${isCameraActive ? 'block' : 'hidden'}`}
+                />
+
+                {/* Loading state */}
+                {!isCameraActive && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
                     <CameraOff className="w-12 h-12 mb-3 opacity-50" />
                     <p className="text-[10px] font-black uppercase tracking-widest">Mengaktifkan kamera...</p>
