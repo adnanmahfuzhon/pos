@@ -147,7 +147,7 @@ export default function Ingredients() {
       newHistory.push({ timestamp: Date.now(), price: pricePerUnit });
     }
 
-    const ingredientData: Ingredient = {
+    const ingredientData: Ingredient & { branchId?: string } = {
       id: editingIngredient ? editingIngredient.id : `ing-${Date.now()}`,
       code,
       name,
@@ -157,7 +157,8 @@ export default function Ingredients() {
       stock,
       minStock,
       recipe: (type === 'Processed' || type === 'Mix') ? recipe : undefined,
-      priceHistory: newHistory
+      priceHistory: newHistory,
+      branchId: selectedBranchId || undefined  // Add branchId for SuperAdmin
     };
 
     setIsSaving(true);
