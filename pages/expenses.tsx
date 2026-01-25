@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Receipt, Search, ShoppingBag, Zap, Tag, Calendar, ChevronDown, CheckCircle2, X, AlertCircle, Filter, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Plus, Receipt, Search, ShoppingBag, Zap, Tag, Calendar, ChevronDown, CheckCircle2, X, AlertCircle, Filter, Trash2, Scan, Camera, CameraOff } from 'lucide-react';
 import { getExpenses, createExpense, deleteExpense, getIngredients, updateIngredient } from '../store';
 import { Expense, Ingredient, ExpenseCategory, PriceRecord } from '../types';
 
@@ -10,6 +10,13 @@ import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { Loader2, Save, Eye } from 'lucide-react';
 import { formatDateToWIB } from '../lib/date';
+
+declare global {
+  interface Window {
+    BarcodeDetector: any;
+  }
+}
+
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -38,10 +45,102 @@ export default function Expenses() {
   const [ingSearch, setIngSearch] = useState('');
   const [showIngDropdown, setShowIngDropdown] = useState(false);
 
+  // Scanner states
+  const [isScanOpen, setIsScanOpen] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [scanResult, setScanResult] = useState<string | null>(null);
+  const [scannedIngredient, setScannedIngredient] = useState<Ingredient | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
   // FIX: Define derived values for HPP preview in the modal
   const targetIng = useMemo(() => ingredients.find(i => i.id === linkedIngredientId), [ingredients, linkedIngredientId]);
   const previewUnitPrice = quantity > 0 ? amount / quantity : 0;
   const priceDiff = targetIng ? previewUnitPrice - targetIng.pricePerUnit : 0;
+
+  // Camera control functions
+  const startCamera = async () => {
+    try {
+      const constraints = { video: { facingMode: 'environment' } };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        streamRef.current = stream;
+        setIsCameraActive(true);
+        startBarcodeDetection();
+      }
+    } catch (err) {
+      showToast('Izin kamera diperlukan', 'error');
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+    }
+    setIsCameraActive(false);
+    setScanResult(null);
+    setScannedIngredient(null);
+  };
+
+  const startBarcodeDetection = async () => {
+    if (!('BarcodeDetector' in window)) {
+      showToast('Browser tidak mendukung scanner', 'error');
+      return;
+    }
+
+    const barcodeDetector = new window.BarcodeDetector({
+      formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39']
+    });
+
+    const detectLoop = async () => {
+      if (!videoRef.current || !isCameraActive) return;
+
+      try {
+        const barcodes = await barcodeDetector.detect(videoRef.current);
+        if (barcodes.length > 0) {
+          const code = barcodes[0].rawValue;
+          setScanResult(code);
+
+          // Find matching ingredient by code
+          const foundIng = ingredients.find(ing => ing.code === code);
+          if (foundIng) {
+            setScannedIngredient(foundIng);
+          } else {
+            setScannedIngredient(null);
+          }
+        }
+      } catch (err) {
+        console.error('Barcode detection error:', err);
+      }
+
+      if (isCameraActive) {
+        requestAnimationFrame(detectLoop);
+      }
+    };
+
+    detectLoop();
+  };
+
+  const handleSelectScannedIngredient = () => {
+    if (scannedIngredient) {
+      setLinkedIngredientId(scannedIngredient.id);
+      setItemName(scannedIngredient.name);
+      setIsScanOpen(false);
+      stopCamera();
+      showToast(`Bahan "${scannedIngredient.name}" dipilih`, 'success');
+    }
+  };
+
+  // Effect for camera cleanup
+  useEffect(() => {
+    if (isScanOpen) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => stopCamera();
+  }, [isScanOpen]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -300,52 +399,63 @@ export default function Expenses() {
                 <>
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Pilih Bahan (Mentah/Kemasan)</label>
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowIngDropdown(!showIngDropdown)}
-                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-black text-slate-900 dark:text-white flex justify-between items-center"
-                      >
-                        <span className="truncate">{targetIng ? `${targetIng.name.toUpperCase()} (${targetIng.unit})` : '-- PILIH BAHAN --'}</span>
-                        <ChevronDown className={`w-4 h-4 transition-transform ${showIngDropdown ? 'rotate-180' : ''}`} />
-                      </button>
+                    <div className="flex gap-3">
+                      <div className="relative flex-1">
+                        <button
+                          onClick={() => setShowIngDropdown(!showIngDropdown)}
+                          className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none font-black text-slate-900 dark:text-white flex justify-between items-center"
+                        >
+                          <span className="truncate">{targetIng ? `${targetIng.name.toUpperCase()} (${targetIng.unit})` : '-- PILIH BAHAN --'}</span>
+                          <ChevronDown className={`w-4 h-4 transition-transform ${showIngDropdown ? 'rotate-180' : ''}`} />
+                        </button>
 
-                      {showIngDropdown && (
-                        <div className="absolute left-0 right-0 mt-3 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 z-[120] p-4 animate-in zoom-in duration-200">
-                          <div className="mb-3 relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <input
-                              type="text"
-                              placeholder="Cari bahan..."
-                              value={ingSearch}
-                              onChange={e => setIngSearch(e.target.value)}
-                              autoFocus
-                              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-[10px] font-black uppercase tracking-tight"
-                            />
+                        {showIngDropdown && (
+                          <div className="absolute left-0 right-0 mt-3 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 z-[120] p-4 animate-in zoom-in duration-200">
+                            <div className="mb-3 relative">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                              <input
+                                type="text"
+                                placeholder="Cari bahan..."
+                                value={ingSearch}
+                                onChange={e => setIngSearch(e.target.value)}
+                                autoFocus
+                                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-[10px] font-black uppercase tracking-tight"
+                              />
+                            </div>
+                            <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-1">
+                              {ingredients
+                                .filter(ing => (ing.type === 'Raw' || ing.type === 'Packaging') && ing.name.toLowerCase().includes(ingSearch.toLowerCase()))
+                                .map(ing => (
+                                  <button
+                                    key={ing.id}
+                                    onClick={() => {
+                                      setLinkedIngredientId(ing.id);
+                                      setItemName(ing.name);
+                                      setIngSearch('');
+                                      setShowIngDropdown(false);
+                                    }}
+                                    className={`w-full flex items-center justify-between p-4 rounded-xl text-left transition-all ${linkedIngredientId === ing.id ? 'bg-orange-500 text-white' : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-white'}`}
+                                  >
+                                    <span className="text-[10px] font-black uppercase">{ing.name}</span>
+                                    <span className={`text-[8px] font-bold ${linkedIngredientId === ing.id ? 'text-white/70' : 'opacity-60'}`}>{ing.unit}</span>
+                                  </button>
+                                ))}
+                              {ingredients.filter(ing => (ing.type === 'Raw' || ing.type === 'Packaging') && ing.name.toLowerCase().includes(ingSearch.toLowerCase())).length === 0 && (
+                                <p className="text-center py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">Tidak ditemukan</p>
+                              )}
+                            </div>
                           </div>
-                          <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-1">
-                            {ingredients
-                              .filter(ing => (ing.type === 'Raw' || ing.type === 'Packaging') && ing.name.toLowerCase().includes(ingSearch.toLowerCase()))
-                              .map(ing => (
-                                <button
-                                  key={ing.id}
-                                  onClick={() => {
-                                    setLinkedIngredientId(ing.id);
-                                    setItemName(ing.name);
-                                    setIngSearch('');
-                                    setShowIngDropdown(false);
-                                  }}
-                                  className={`w-full flex items-center justify-between p-4 rounded-xl text-left transition-all ${linkedIngredientId === ing.id ? 'bg-orange-500 text-white' : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-white'}`}
-                                >
-                                  <span className="text-[10px] font-black uppercase">{ing.name}</span>
-                                  <span className={`text-[8px] font-bold ${linkedIngredientId === ing.id ? 'text-white/70' : 'opacity-60'}`}>{ing.unit}</span>
-                                </button>
-                              ))}
-                            {ingredients.filter(ing => (ing.type === 'Raw' || ing.type === 'Packaging') && ing.name.toLowerCase().includes(ingSearch.toLowerCase())).length === 0 && (
-                              <p className="text-center py-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">Tidak ditemukan</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
+
+                      {/* Scan Button */}
+                      <button
+                        onClick={() => setIsScanOpen(true)}
+                        className="px-5 py-4 bg-slate-900 dark:bg-slate-800 text-white rounded-2xl border border-slate-800 dark:border-slate-700 hover:bg-black transition-all flex items-center gap-2 shrink-0"
+                        title="Scan Barcode"
+                      >
+                        <Scan className="w-5 h-5" />
+                      </button>
                     </div>
                   </div>
 
@@ -444,6 +554,103 @@ export default function Expenses() {
                 {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
                 {isSaving ? 'MEMPROSES...' : 'Simpan & Update HPP'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barcode Scanner Modal */}
+      {isScanOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-slate-900 dark:bg-slate-800 rounded-2xl text-white">
+                  <Scan className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Scan Barcode</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Arahkan kamera ke barcode bahan</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsScanOpen(false)}
+                className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-red-500 rounded-xl transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+              {/* Camera View */}
+              <div className="relative aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-slate-800">
+                {isCameraActive ? (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
+                    <CameraOff className="w-12 h-12 mb-3 opacity-50" />
+                    <p className="text-[10px] font-black uppercase tracking-widest">Mengaktifkan kamera...</p>
+                  </div>
+                )}
+
+                {/* Scan overlay */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute inset-8 border-2 border-orange-500/50 rounded-xl" />
+                  <div className="absolute top-1/2 left-8 right-8 h-0.5 bg-orange-500/70 animate-pulse" />
+                </div>
+              </div>
+
+              {/* Scan Result */}
+              {scanResult && (
+                <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Barcode Terdeteksi</p>
+                      <p className="text-lg font-black text-slate-900 dark:text-white tracking-wider">{scanResult}</p>
+                    </div>
+                  </div>
+
+                  {scannedIngredient ? (
+                    <div className="bg-green-50 dark:bg-green-500/10 p-4 rounded-xl border border-green-200 dark:border-green-500/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Bahan Ditemukan</p>
+                          <p className="font-black text-green-700 dark:text-green-400 uppercase">{scannedIngredient.name}</p>
+                          <p className="text-[10px] font-bold text-green-600/70 mt-1">{scannedIngredient.unit} | Stok: {scannedIngredient.stock}</p>
+                        </div>
+                        <button
+                          onClick={handleSelectScannedIngredient}
+                          className="bg-green-500 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-600 transition-all shadow-lg shadow-green-500/20"
+                        >
+                          Pilih
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-red-50 dark:bg-red-500/10 p-4 rounded-xl border border-red-200 dark:border-red-500/20">
+                      <div className="flex items-center gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-500" />
+                        <div>
+                          <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Bahan Tidak Ditemukan</p>
+                          <p className="text-[9px] font-bold text-red-500/70 mt-1">Barcode ini belum terdaftar di sistem</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!scanResult && isCameraActive && (
+                <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
+                  Mencari barcode...
+                </p>
+              )}
             </div>
           </div>
         </div>
