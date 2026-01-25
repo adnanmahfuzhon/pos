@@ -56,9 +56,11 @@ export default function Ingredients() {
   const [scanQty, setScanQty] = useState(0);
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isFormScanOpen, setIsFormScanOpen] = useState(false); // Scanner for form code input
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const cameraActiveRef = useRef(false); // Ref for detection loop
 
   // Form states
   const [code, setCode] = useState('');
@@ -100,16 +102,66 @@ export default function Ingredients() {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
-        setIsCameraActive(true);
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().then(() => {
+            cameraActiveRef.current = true;
+            setIsCameraActive(true);
+            startBarcodeDetection();
+          }).catch(console.error);
+        };
       }
     } catch (err) {
+      console.error('Camera error:', err);
       alert("Izin kamera diperlukan.");
     }
   };
 
   const stopCamera = () => {
+    cameraActiveRef.current = false;
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
     setIsCameraActive(false);
+  };
+
+  const startBarcodeDetection = () => {
+    if (!('BarcodeDetector' in window)) {
+      showToast('Browser tidak mendukung scanner', 'error');
+      return;
+    }
+
+    const barcodeDetector = new window.BarcodeDetector({
+      formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39']
+    });
+
+    const detectLoop = async () => {
+      if (!videoRef.current || !cameraActiveRef.current) return;
+
+      try {
+        const barcodes = await barcodeDetector.detect(videoRef.current);
+        if (barcodes.length > 0) {
+          const detectedCode = barcodes[0].rawValue;
+          // If form scan is open, set the code field
+          if (isFormScanOpen) {
+            setCode(detectedCode);
+            setScanResult(`Kode: ${detectedCode}`);
+            // Auto close after detection
+            setTimeout(() => {
+              setIsFormScanOpen(false);
+              stopCamera();
+              setScanResult(null);
+            }, 1000);
+            return; // Stop detection after successful scan
+          }
+        }
+      } catch (err) {
+        console.error('Barcode detection error:', err);
+      }
+
+      if (cameraActiveRef.current) {
+        requestAnimationFrame(detectLoop);
+      }
+    };
+
+    detectLoop();
   };
 
   useEffect(() => {
@@ -117,6 +169,15 @@ export default function Ingredients() {
     else stopCamera();
     return () => stopCamera();
   }, [isScanOpen]);
+
+  // Effect for form barcode scanner
+  useEffect(() => {
+    if (isFormScanOpen) startCamera();
+    else if (!isScanOpen) stopCamera(); // Only stop if quick scan is also closed
+    return () => {
+      if (!isScanOpen) stopCamera();
+    };
+  }, [isFormScanOpen]);
 
   const openModal = (ing?: Ingredient) => {
     if (ing) {
@@ -937,7 +998,17 @@ export default function Ingredients() {
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Kode Barcode / UPC</label>
-                    <input type="text" value={code} onChange={e => setCode(e.target.value)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-black text-orange-600" />
+                    <div className="flex gap-2">
+                      <input type="text" value={code} onChange={e => setCode(e.target.value)} className="flex-1 px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-black text-orange-600" />
+                      <button
+                        type="button"
+                        onClick={() => setIsFormScanOpen(true)}
+                        className="px-4 py-4 bg-slate-900 dark:bg-slate-800 text-white rounded-xl border border-slate-800 dark:border-slate-700 hover:bg-black transition-all flex items-center gap-2 shrink-0"
+                        title="Scan Barcode"
+                      >
+                        <Scan className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipe Bahan</label>
@@ -1139,6 +1210,70 @@ export default function Ingredients() {
                 {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
                 {isSaving ? 'MEMPROSES...' : 'Simpan Konfigurasi'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FORM BARCODE SCANNER MODAL */}
+      {isFormScanOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-orange-500 rounded-2xl text-white shadow-lg shadow-orange-500/20">
+                  <Scan className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Scan Barcode</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Arahkan kamera ke barcode bahan</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setIsFormScanOpen(false); setScanResult(null); }}
+                className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-red-500 rounded-xl transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+              {/* Camera View */}
+              <div className="relative aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-slate-800">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`w-full h-full object-cover ${isCameraActive ? 'block' : 'hidden'}`}
+                />
+
+                {!isCameraActive && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600">
+                    <CameraOff className="w-12 h-12 mb-3 opacity-50" />
+                    <p className="text-[10px] font-black uppercase tracking-widest">Mengaktifkan kamera...</p>
+                  </div>
+                )}
+
+                {/* Scan overlay */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute inset-8 border-2 border-orange-500/50 rounded-xl" />
+                  <div className="absolute top-1/2 left-8 right-8 h-0.5 bg-orange-500/70 animate-pulse" />
+                </div>
+              </div>
+
+              {/* Scan Result */}
+              {scanResult && (
+                <div className="p-4 rounded-2xl text-[10px] font-black uppercase bg-green-500 text-white flex items-center gap-3 animate-in fade-in duration-300">
+                  <CheckCircle2 className="w-5 h-5" /> {scanResult}
+                </div>
+              )}
+
+              {!scanResult && isCameraActive && (
+                <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
+                  Mencari barcode...
+                </p>
+              )}
             </div>
           </div>
         </div>

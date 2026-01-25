@@ -52,6 +52,7 @@ export default function Expenses() {
   const [scannedIngredient, setScannedIngredient] = useState<Ingredient | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const cameraActiveRef = useRef(false); // Ref to track camera active for detection loop
 
   // FIX: Define derived values for HPP preview in the modal
   const targetIng = useMemo(() => ingredients.find(i => i.id === linkedIngredientId), [ingredients, linkedIngredientId]);
@@ -69,6 +70,7 @@ export default function Expenses() {
         // Wait for video to be ready before playing
         videoRef.current.onloadedmetadata = () => {
           videoRef.current?.play().then(() => {
+            cameraActiveRef.current = true;
             setIsCameraActive(true);
             startBarcodeDetection();
           }).catch(console.error);
@@ -81,6 +83,7 @@ export default function Expenses() {
   };
 
   const stopCamera = () => {
+    cameraActiveRef.current = false;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop());
     }
@@ -100,7 +103,8 @@ export default function Expenses() {
     });
 
     const detectLoop = async () => {
-      if (!videoRef.current || !isCameraActive) return;
+      // Use ref instead of state to avoid stale closure
+      if (!videoRef.current || !cameraActiveRef.current) return;
 
       try {
         const barcodes = await barcodeDetector.detect(videoRef.current);
@@ -120,7 +124,8 @@ export default function Expenses() {
         console.error('Barcode detection error:', err);
       }
 
-      if (isCameraActive) {
+      // Use ref for loop continuation check
+      if (cameraActiveRef.current) {
         requestAnimationFrame(detectLoop);
       }
     };
