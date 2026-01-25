@@ -90,7 +90,7 @@ export default function Products() {
 
   const handleSave = async () => {
     if (!name || price <= 0) return;
-    const newProduct: Product = {
+    const newProduct: Product & { branchId?: string } = {
       id: editingProduct ? editingProduct.id : `p-${Date.now()}`,
       name,
       price,
@@ -98,7 +98,8 @@ export default function Products() {
       category,
       imageUrl,
       isActive: true,
-      ingredients: recipe
+      ingredients: recipe,
+      branchId: selectedBranchId || undefined  // Add branchId for SuperAdmin
     };
 
     setIsSaving(true);
