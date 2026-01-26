@@ -995,11 +995,11 @@ export default function Ingredients() {
 
             <div className="flex-1 overflow-y-auto p-10 grid grid-cols-1 lg:grid-cols-2 gap-12 custom-scrollbar">
               <div className="space-y-8">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Kode Barcode / UPC</label>
                     <div className="flex gap-2">
-                      <input type="text" value={code} onChange={e => setCode(e.target.value)} className="flex-1 px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-black text-orange-600" />
+                      <input type="text" value={code} onChange={e => setCode(e.target.value)} className="flex-1 min-w-0 px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-black text-orange-600" />
                       <button
                         type="button"
                         onClick={() => setIsFormScanOpen(true)}

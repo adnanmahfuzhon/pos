@@ -255,16 +255,16 @@ export default function Products() {
                     </td>
                     <td className="px-8 py-6 text-right">
                       {canModify && (
-                        <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-3">
                           <button
                             onClick={() => openModal(product)}
-                            className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-orange-500 rounded-xl transition-all hover:shadow-md"
+                            className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-orange-500 rounded-xl transition-all hover:shadow-md"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => deleteProductFn(product.id)}
-                            className="p-3 bg-red-50 dark:bg-red-500/10 text-red-400 hover:text-red-500 rounded-xl transition-all hover:shadow-md"
+                            className="p-3 bg-red-100 dark:bg-red-500/20 text-red-400 hover:text-red-500 rounded-xl transition-all hover:shadow-md"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
