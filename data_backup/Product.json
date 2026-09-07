@@ -1,1 +1,182 @@
-[{"id":"p-1768228495637","name":"Pangsit goreng","price":11500,"category":"Snack","isActive":true,"imageUrl":"https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/eb961456-49e4-46d7-a5bf-575f87dfe3f6_Go-Biz_20250417_073150.jpeg?auto=format","channelPrices":{"GoFood":14500,"Offline":11500,"GrabFood":14500,"ShopeeFood":14500},"branchId":"4f42986d-539d-4aa0-9102-df9de470c4e3"},{"id":"p-1768230933461","name":"es teh","price":6000,"category":"Non-Coffee","isActive":true,"imageUrl":"https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/78fc3a6f-e090-4bec-b2e5-a33122ba2091_Go-Biz_20200827_082323.jpeg?auto=format","channelPrices":{"GoFood":8000,"Offline":6000,"GrabFood":8000,"ShopeeFood":8000},"branchId":"4f42986d-539d-4aa0-9102-df9de470c4e3"},{"id":"p-1768231128251","name":"Lemon tea","price":7000,"category":"Non-Coffee","isActive":true,"imageUrl":"https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/9a800152-b4e1-490e-a866-17b4eaea0933_Go-Biz_20220205_052805.jpeg?auto=format","channelPrices":{"GoFood":8500,"Offline":7000,"GrabFood":8500,"ShopeeFood":8500},"branchId":"4f42986d-539d-4aa0-9102-df9de470c4e3"},{"id":"p-1768239676330","name":"Mie galium","price":17000,"category":"Food","isActive":true,"imageUrl":"https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/09224ef6-9c74-4235-a6a0-bb89d5f73ac6_Go-Biz_20200827_073752.jpeg?auto=format","channelPrices":{"GoFood":19200,"Offline":17000,"GrabFood":19200,"ShopeeFood":19200},"branchId":"4f42986d-539d-4aa0-9102-df9de470c4e3"},{"id":"p-1768262600329","name":"Nasi ayam geprek","price":17000,"category":"Food","isActive":true,"imageUrl":"https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/b0ae0bc0-e292-4d78-b192-a525bd544d2e_Go-Biz_20210220_095350.jpeg?auto=format","channelPrices":{"GoFood":20500,"Offline":17000,"GrabFood":20500,"ShopeeFood":20500},"branchId":"4f42986d-539d-4aa0-9102-df9de470c4e3"},{"id":"p-1768275591246","name":"Tahu bakso","price":10000,"category":"Snack","isActive":true,"imageUrl":"https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/994d138f-f9b8-46f0-8d6b-702d41e89d3b_Go-Biz_20231115_080322.jpeg?auto=format","channelPrices":{"GoFood":12200,"Offline":10000,"GrabFood":12200,"ShopeeFood":12200},"branchId":"4f42986d-539d-4aa0-9102-df9de470c4e3"},{"id":"p-1768452019885","name":"Dimsum Ayam","price":15000,"category":"Snack","isActive":true,"imageUrl":"https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/d919ee85-6e3d-4d3b-a967-5a64c6745e21_Go-Biz_20200827_082132.jpeg?auto=format","channelPrices":{"GoFood":18000,"Offline":15000,"GrabFood":18000,"ShopeeFood":18000},"branchId":"4f42986d-539d-4aa0-9102-df9de470c4e3"},{"id":"p-1768452251338","name":"Dimsum Mentai","price":21000,"category":"Snack","isActive":true,"imageUrl":"https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/a9bfcd53-deb0-4e7c-9219-209c35db8417_Go-Biz_20250420_095018.jpeg?auto=format","channelPrices":{"GoFood":25000,"Offline":21000,"GrabFood":25000,"ShopeeFood":25000},"branchId":"4f42986d-539d-4aa0-9102-df9de470c4e3"},{"id":"p-1768614587366","name":"Raspberry squah","price":11000,"category":"Non-Coffee","isActive":true,"imageUrl":"https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/719946e2-b56e-40f2-8767-c1d0fcefe976_Go-Biz_20220317_104108.jpeg?auto=format","channelPrices":{"GoFood":12500,"Offline":11000,"GrabFood":12500,"ShopeeFood":12500},"branchId":"4f42986d-539d-4aa0-9102-df9de470c4e3"},{"id":"p-1768614839991","name":"Manggo squash","price":11000,"category":"Non-Coffee","isActive":true,"imageUrl":"https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/cd789fcf-ad17-424e-a075-1b42af432055_Go-Biz_20230128_112015.jpeg?auto=format","channelPrices":{"GoFood":12500,"Offline":11000,"GrabFood":12500,"ShopeeFood":12500},"branchId":"4f42986d-539d-4aa0-9102-df9de470c4e3"},{"id":"p-1768615412662","name":"Lychee squash","price":11000,"category":"Non-Coffee","isActive":true,"imageUrl":"https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/2de8aa7a-6d22-427a-9e20-566ee5e920f5_Go-Food-Merchant_20251217_075015.jpeg?auto=format","channelPrices":{"GoFood":12500,"Offline":11000,"GrabFood":12500,"ShopeeFood":12500},"branchId":"4f42986d-539d-4aa0-9102-df9de470c4e3"}]
+[
+  {
+    "id": "p-1768452019885",
+    "name": "Dimsum Ayam",
+    "price": 15000,
+    "category": "Snack",
+    "isActive": true,
+    "imageUrl": "https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/d919ee85-6e3d-4d3b-a967-5a64c6745e21_Go-Biz_20200827_082132.jpeg?auto=format",
+    "channelPrices": {
+      "GoFood": 18000,
+      "Offline": 15000,
+      "GrabFood": 18000,
+      "ShopeeFood": 18000
+    },
+    "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+  },
+  {
+    "id": "p-1768452251338",
+    "name": "Dimsum Mentai",
+    "price": 21000,
+    "category": "Snack",
+    "isActive": true,
+    "imageUrl": "https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/a9bfcd53-deb0-4e7c-9219-209c35db8417_Go-Biz_20250420_095018.jpeg?auto=format",
+    "channelPrices": {
+      "GoFood": 25000,
+      "Offline": 21000,
+      "GrabFood": 25000,
+      "ShopeeFood": 25000
+    },
+    "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+  },
+  {
+    "id": "p-1768231128251",
+    "name": "Lemon tea",
+    "price": 7000,
+    "category": "Non-Coffee",
+    "isActive": true,
+    "imageUrl": "https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/9a800152-b4e1-490e-a866-17b4eaea0933_Go-Biz_20220205_052805.jpeg?auto=format",
+    "channelPrices": {
+      "GoFood": 8500,
+      "Offline": 7000,
+      "GrabFood": 8500,
+      "ShopeeFood": 8500
+    },
+    "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+  },
+  {
+    "id": "p-1768615412662",
+    "name": "Lychee squash",
+    "price": 11000,
+    "category": "Non-Coffee",
+    "isActive": true,
+    "imageUrl": "https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/2de8aa7a-6d22-427a-9e20-566ee5e920f5_Go-Food-Merchant_20251217_075015.jpeg?auto=format",
+    "channelPrices": {
+      "GoFood": 12500,
+      "Offline": 11000,
+      "GrabFood": 12500,
+      "ShopeeFood": 12500
+    },
+    "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+  },
+  {
+    "id": "p-1768614839991",
+    "name": "Manggo squash",
+    "price": 11000,
+    "category": "Non-Coffee",
+    "isActive": true,
+    "imageUrl": "https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/cd789fcf-ad17-424e-a075-1b42af432055_Go-Biz_20230128_112015.jpeg?auto=format",
+    "channelPrices": {
+      "GoFood": 12500,
+      "Offline": 11000,
+      "GrabFood": 12500,
+      "ShopeeFood": 12500
+    },
+    "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+  },
+  {
+    "id": "p-1768239676330",
+    "name": "Mie galium",
+    "price": 17000,
+    "category": "Food",
+    "isActive": true,
+    "imageUrl": "https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/09224ef6-9c74-4235-a6a0-bb89d5f73ac6_Go-Biz_20200827_073752.jpeg?auto=format",
+    "channelPrices": {
+      "GoFood": 19200,
+      "Offline": 17000,
+      "GrabFood": 19200,
+      "ShopeeFood": 19200
+    },
+    "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+  },
+  {
+    "id": "p-1769340293551",
+    "name": "Mineral",
+    "price": 5000,
+    "category": "Non-Coffee",
+    "isActive": true,
+    "imageUrl": "data:image/jpeg;base64,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",
+    "channelPrices": {
+      "GoFood": 7500,
+      "Offline": 5000,
+      "GrabFood": 7500,
+      "ShopeeFood": 7500
+    },
+    "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+  },
+  {
+    "id": "p-1768262600329",
+    "name": "Nasi ayam geprek",
+    "price": 17000,
+    "category": "Food",
+    "isActive": true,
+    "imageUrl": "https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/b0ae0bc0-e292-4d78-b192-a525bd544d2e_Go-Biz_20210220_095350.jpeg?auto=format",
+    "channelPrices": {
+      "GoFood": 20500,
+      "Offline": 17000,
+      "GrabFood": 20500,
+      "ShopeeFood": 20500
+    },
+    "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+  },
+  {
+    "id": "p-1768228495637",
+    "name": "Pangsit goreng",
+    "price": 11500,
+    "category": "Snack",
+    "isActive": true,
+    "imageUrl": "https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/eb961456-49e4-46d7-a5bf-575f87dfe3f6_Go-Biz_20250417_073150.jpeg?auto=format",
+    "channelPrices": {
+      "GoFood": 14500,
+      "Offline": 11500,
+      "GrabFood": 14500,
+      "ShopeeFood": 14500
+    },
+    "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+  },
+  {
+    "id": "p-1768614587366",
+    "name": "Raspberry squah",
+    "price": 11000,
+    "category": "Non-Coffee",
+    "isActive": true,
+    "imageUrl": "https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/719946e2-b56e-40f2-8767-c1d0fcefe976_Go-Biz_20220317_104108.jpeg?auto=format",
+    "channelPrices": {
+      "GoFood": 12500,
+      "Offline": 11000,
+      "GrabFood": 12500,
+      "ShopeeFood": 12500
+    },
+    "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+  },
+  {
+    "id": "p-1768275591246",
+    "name": "Tahu bakso",
+    "price": 10000,
+    "category": "Snack",
+    "isActive": true,
+    "imageUrl": "https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/994d138f-f9b8-46f0-8d6b-702d41e89d3b_Go-Biz_20231115_080322.jpeg?auto=format",
+    "channelPrices": {
+      "GoFood": 12200,
+      "Offline": 10000,
+      "GrabFood": 12200,
+      "ShopeeFood": 12200
+    },
+    "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+  },
+  {
+    "id": "p-1768230933461",
+    "name": "es teh",
+    "price": 6000,
+    "category": "Non-Coffee",
+    "isActive": true,
+    "imageUrl": "https://i.gojekapi.com/darkroom/gofood-indonesia/v2/images/uploads/78fc3a6f-e090-4bec-b2e5-a33122ba2091_Go-Biz_20200827_082323.jpeg?auto=format",
+    "channelPrices": {
+      "GoFood": 8000,
+      "Offline": 6000,
+      "GrabFood": 8000,
+      "ShopeeFood": 8000
+    },
+    "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+  }
+]

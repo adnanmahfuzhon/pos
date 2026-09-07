@@ -12,7 +12,10 @@
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
-    "db:setup": "npm install && prisma generate && prisma db push"
+    "db:setup": "npm install && prisma generate && prisma db push",
+    "inject:finance": "tsx scripts/inject-finance.ts",
+    "inject:transactions": "tsx scripts/inject-transactions.ts",
+    "restore:backdone": "tsx scripts/inject-backdone.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
