@@ -1089,6 +1089,236 @@
       "linkedIngredientId": null,
       "quantity": 1,
       "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1783234320000-860",
+      "timestamp": 1783234320000,
+      "category": "Bahan",
+      "itemName": "Es batu & Teh manis refill",
+      "amount": 44266,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1783485420000-170",
+      "timestamp": 1783485420000,
+      "category": "Bahan",
+      "itemName": "Ayam krispi & dada filet",
+      "amount": 225812,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1783653480000-377",
+      "timestamp": 1783653480000,
+      "category": "Bahan",
+      "itemName": "Es batu & Teh manis refill",
+      "amount": 27284,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1783849500000-496",
+      "timestamp": 1783849500000,
+      "category": "Bahan",
+      "itemName": "Ayam krispi & dada filet",
+      "amount": 159656,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1784107260000-776",
+      "timestamp": 1784107260000,
+      "category": "Bahan",
+      "itemName": "Mie mentah & bumbu mie",
+      "amount": 118706,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1784179800000-912",
+      "timestamp": 1784179800000,
+      "category": "Bahan",
+      "itemName": "Es batu & Teh manis refill",
+      "amount": 44004,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1784273880000-515",
+      "timestamp": 1784273880000,
+      "category": "Bahan",
+      "itemName": "Beras 10kg",
+      "amount": 143421,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1784604300000-834",
+      "timestamp": 1784604300000,
+      "category": "Bahan",
+      "itemName": "Ayam krispi & dada filet",
+      "amount": 233327,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1784796360000-381",
+      "timestamp": 1784796360000,
+      "category": "Operasional",
+      "itemName": "Gas LPG 3kg",
+      "amount": 44317,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-SALARY-1785499200000",
+      "timestamp": 1785499200000,
+      "category": "Gaji / SDM",
+      "itemName": "Gaji Karyawan Toko",
+      "amount": 800000,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1785647580000-242",
+      "timestamp": 1785647580000,
+      "category": "Bahan",
+      "itemName": "Mie mentah & bumbu mie",
+      "amount": 165116,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1785899880000-977",
+      "timestamp": 1785899880000,
+      "category": "Bahan",
+      "itemName": "Beras 10kg",
+      "amount": 137408,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1785990840000-515",
+      "timestamp": 1785990840000,
+      "category": "Bahan",
+      "itemName": "Cabe & Bawang goreng",
+      "amount": 46260,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1786436820000-244",
+      "timestamp": 1786436820000,
+      "category": "Bahan",
+      "itemName": "Beras 10kg",
+      "amount": 146081,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1786513200000-796",
+      "timestamp": 1786513200000,
+      "category": "Bahan",
+      "itemName": "Mie mentah & bumbu mie",
+      "amount": 141678,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1786772640000-794",
+      "timestamp": 1786772640000,
+      "category": "Bahan",
+      "itemName": "Es batu & Teh manis refill",
+      "amount": 37739,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1787203500000-141",
+      "timestamp": 1787203500000,
+      "category": "Bahan",
+      "itemName": "Cabe & Bawang goreng",
+      "amount": 76752,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1787806740000-959",
+      "timestamp": 1787806740000,
+      "category": "Operasional",
+      "itemName": "Kemasan Bowl & Cup Teh",
+      "amount": 87616,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1787887800000-234",
+      "timestamp": 1787887800000,
+      "category": "Operasional",
+      "itemName": "Kemasan Bowl & Cup Teh",
+      "amount": 78167,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1787991240000-878",
+      "timestamp": 1787991240000,
+      "category": "Bahan",
+      "itemName": "Cabe & Bawang goreng",
+      "amount": 57619,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1788056040000-342",
+      "timestamp": 1788056040000,
+      "category": "Bahan",
+      "itemName": "Es batu & Teh manis refill",
+      "amount": 37474,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1788243240000-266",
+      "timestamp": 1788243240000,
+      "category": "Bahan",
+      "itemName": "Mie mentah & bumbu mie",
+      "amount": 139839,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
+    },
+    {
+      "id": "EXP-1788848520000-339",
+      "timestamp": 1788848520000,
+      "category": "Operasional",
+      "itemName": "Kemasan Bowl & Cup Teh",
+      "amount": 71280,
+      "linkedIngredientId": null,
+      "quantity": null,
+      "branchId": "6502160a-b734-4597-9e07-1f9d53cc527c"
     }
   ]
 }
