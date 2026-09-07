@@ -304,7 +304,7 @@ export default function Dashboard() {
 
   const totalHPP = filteredSales.reduce((sum, s) => sum + s.totalHPP, 0);
   const totalOpExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const estimatedProfit = totalRevenue - totalHPP - totalOpExpenses;
+  const estimatedProfit = totalRevenue - totalOpExpenses;
 
   // Enhanced Metrics
   const transactionCount = filteredSales.length;
