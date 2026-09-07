@@ -23,7 +23,9 @@ import {
   Bike,
   Car,
   Globe,
-  Building2
+  Building2,
+  Loader2,
+  CheckCircle2
 } from 'lucide-react';
 import {
   BarChart,
@@ -86,6 +88,155 @@ export default function Dashboard() {
         .catch(console.error);
     }
   }, [isSuperAdmin, isAuthenticated]);
+
+  // Restore Progress Modal States
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreProgress, setRestoreProgress] = useState(0);
+  const [restoreStepText, setRestoreStepText] = useState('');
+  const [restoreSubText, setRestoreSubText] = useState('');
+  const [restoreStatus, setRestoreStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [restoreSummary, setRestoreSummary] = useState<any>(null);
+  const [restoreErrorMessage, setRestoreErrorMessage] = useState('');
+
+  const handleRestoreFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const targetBranchEl = document.getElementById('restoreTargetBranch') as HTMLSelectElement;
+    const targetBranchId = targetBranchEl?.value;
+
+    const confirmMsg = targetBranchId
+      ? `⚠️ INJECT DATA ke Cabang ID: ${targetBranchId}?\n\nSemua data dari file akan dimasukkan ke cabang ini.`
+      : "⚠️ RESTORE DATABASE?\n\nData akan dikembalikan sesuai ID aslinya di file backup.";
+
+    if (!confirm(confirmMsg)) {
+      e.target.value = '';
+      return;
+    }
+
+    setIsRestoring(true);
+    setRestoreStatus('loading');
+    setRestoreProgress(5);
+    setRestoreStepText('Membaca & Memvalidasi File JSON...');
+    setRestoreSubText(file.name);
+    setRestoreErrorMessage('');
+    setRestoreSummary(null);
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const jsonData = JSON.parse(event.target?.result as string);
+        const query = targetBranchId ? `?targetBranchId=${targetBranchId}` : '';
+        const token = localStorage.getItem('pos_token') || 'dev-bypass-token';
+        const authHeader = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        };
+
+        const sendRestoreBatch = async (payload: any) => {
+          const res = await fetch(`/api/admin/restore${query}`, {
+            method: 'POST',
+            headers: authHeader,
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Restore failed');
+          return data.details;
+        };
+
+        const totalDetails = {
+          branches: 0,
+          ingredients: 0,
+          products: 0,
+          sales: 0,
+          expenses: 0,
+          incomes: 0
+        };
+
+        const branches = jsonData.branches || [];
+        const ingredients = jsonData.ingredients || [];
+        const products = jsonData.products || [];
+        const sales = jsonData.sales || [];
+        const expenses = jsonData.expenses || [];
+        const incomes = jsonData.incomes || [];
+
+        // 1. Branches
+        if (branches.length > 0) {
+          setRestoreProgress(15);
+          setRestoreStepText('Mengimpor Data Cabang...');
+          setRestoreSubText(`${branches.length} cabang`);
+          const res = await sendRestoreBatch({ branches });
+          totalDetails.branches = res.branches || branches.length;
+        }
+
+        // 2. Ingredients
+        if (ingredients.length > 0) {
+          setRestoreProgress(30);
+          setRestoreStepText('Mengimpor Data Bahan Baku...');
+          setRestoreSubText(`${ingredients.length} bahan baku`);
+          const res = await sendRestoreBatch({ ingredients });
+          totalDetails.ingredients = res.ingredients || ingredients.length;
+        }
+
+        // 3. Products
+        if (products.length > 0) {
+          setRestoreProgress(45);
+          setRestoreStepText('Mengimpor Data Produk & Resep...');
+          setRestoreSubText(`${products.length} produk`);
+          const res = await sendRestoreBatch({ products });
+          totalDetails.products = res.products || products.length;
+        }
+
+        // 4. Sales (Batch in chunks of 100)
+        if (sales.length > 0) {
+          const chunkSize = 100;
+          const totalChunks = Math.ceil(sales.length / chunkSize);
+          for (let i = 0; i < totalChunks; i++) {
+            const chunkSales = sales.slice(i * chunkSize, (i + 1) * chunkSize);
+            const currentCount = Math.min((i + 1) * chunkSize, sales.length);
+            const prog = 45 + Math.round(((i + 1) / totalChunks) * 35);
+            setRestoreProgress(prog);
+            setRestoreStepText('Mengimpor Transaksi Penjualan...');
+            setRestoreSubText(`${currentCount} dari ${sales.length} transaksi`);
+            await sendRestoreBatch({ sales: chunkSales });
+          }
+          totalDetails.sales = sales.length;
+        }
+
+        // 5. Expenses
+        if (expenses.length > 0) {
+          setRestoreProgress(90);
+          setRestoreStepText('Mengimpor Data Pengeluaran...');
+          setRestoreSubText(`${expenses.length} data pengeluaran`);
+          const res = await sendRestoreBatch({ expenses });
+          totalDetails.expenses = res.expenses || expenses.length;
+        }
+
+        // 6. Incomes
+        if (incomes.length > 0) {
+          setRestoreProgress(98);
+          setRestoreStepText('Mengimpor Data Pemasukan...');
+          setRestoreSubText(`${incomes.length} data pemasukan`);
+          const res = await sendRestoreBatch({ incomes });
+          totalDetails.incomes = res.incomes || incomes.length;
+        }
+
+        setRestoreProgress(100);
+        setRestoreStepText('Restore Data Berhasil!');
+        setRestoreSubText('Semua data telah disinkronkan ke database');
+        setRestoreSummary(totalDetails);
+        setRestoreStatus('success');
+
+      } catch (err: any) {
+        console.error('Restore error:', err);
+        setRestoreStatus('error');
+        setRestoreErrorMessage(err.message || 'Terjadi kesalahan saat memproses restore.');
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  };
+
 
   // Date Filter states
   const today = formatDateToWIB(new Date());
@@ -736,51 +887,7 @@ export default function Dashboard() {
                   <input
                     type="file"
                     accept=".json"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-
-                      const targetBranchEl = document.getElementById('restoreTargetBranch') as HTMLSelectElement;
-                      const targetBranchId = targetBranchEl?.value;
-
-                      const confirmMsg = targetBranchId
-                        ? `⚠️ INJECT DATA ke Cabang ID: ${targetBranchId}?\n\nSemua data dari file akan dimasukkan ke cabang ini. Data yang ada akan di-update.`
-                        : "⚠️ RESTORE DATABASE?\n\nData akan dikembalikan sesuai ID aslinya di file backup.";
-
-                      if (!confirm(confirmMsg)) {
-                        e.target.value = ''; // Reset
-                        return;
-                      }
-
-                      const reader = new FileReader();
-                      reader.onload = async (event) => {
-                        try {
-                          const jsonData = JSON.parse(event.target?.result as string);
-
-                          const query = targetBranchId ? `?targetBranchId=${targetBranchId}` : '';
-                          const res = await fetch(`/api/admin/restore${query}`, {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json',
-                              'Authorization': `Bearer ${localStorage.getItem('pos_token') || 'dev-bypass-token'}`
-                            },
-                            body: JSON.stringify(jsonData)
-                          });
-
-                          const result = await res.json();
-                          if (res.ok) {
-                            alert(`✅ Restore Berhasil!\n\nTarget: ${result.targetBranch}\nDetail: ${JSON.stringify(result.details, null, 2)}`);
-                            window.location.reload();
-                          } else {
-                            alert(`❌ Gagal: ${result.error}`);
-                          }
-                        } catch (err: any) {
-                          alert("❌ Error: " + err.message);
-                        }
-                        e.target.value = ''; // Reset
-                      };
-                      reader.readAsText(file);
-                    }}
+                    onChange={handleRestoreFile}
                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                   />
                   <button className="w-full py-5 bg-white/5 hover:bg-white/10 text-white rounded-2xl border border-white/10 flex items-center justify-center gap-3 transition-all group">
@@ -802,11 +909,138 @@ export default function Dashboard() {
             </div>
 
             <div className="p-4 bg-orange-500/10 rounded-2xl border border-orange-500/20">
-              <p className="text-[9px] font-bold text-orange-400 uppercase tracking-tight italic">Data disimpan di database SQLite lokal (prisma/dev.db).</p>
+              <p className="text-[9px] font-bold text-orange-400 uppercase tracking-tight italic">Data tersinkronisasi otomatis dengan Database Cloud POS.</p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* RESTORE / INJECT PROGRESS MODAL */}
+      {isRestoring && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="max-w-md w-full bg-slate-900 border border-white/10 rounded-3xl p-6 shadow-2xl shadow-emerald-500/10 flex flex-col items-center text-center relative overflow-hidden">
+            {/* Ambient Background Glow */}
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Status Icon */}
+            <div className="mb-5 relative">
+              {restoreStatus === 'loading' && (
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute w-20 h-20 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin" />
+                  <div className="w-14 h-14 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400 border border-emerald-500/20 shadow-inner">
+                    <Database className="w-7 h-7 animate-pulse" />
+                  </div>
+                </div>
+              )}
+
+              {restoreStatus === 'success' && (
+                <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/20 animate-bounce">
+                  <CheckCircle2 className="w-10 h-10" />
+                </div>
+              )}
+
+              {restoreStatus === 'error' && (
+                <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 border border-red-500/30 shadow-lg shadow-red-500/20">
+                  <AlertTriangle className="w-10 h-10" />
+                </div>
+              )}
+            </div>
+
+            {/* Title & Step Text */}
+            <h3 className="text-xl font-black text-white tracking-tight mb-1">
+              {restoreStatus === 'loading' && 'Memproses Restore Data'}
+              {restoreStatus === 'success' && 'Restore Data Berhasil!'}
+              {restoreStatus === 'error' && 'Gagal Memproses Restore'}
+            </h3>
+
+            <p className="text-xs font-semibold text-emerald-400 mb-3">{restoreStepText}</p>
+            {restoreSubText && (
+              <p className="text-[11px] font-medium text-slate-400 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 mb-6 truncate max-w-full">
+                {restoreSubText}
+              </p>
+            )}
+
+            {/* Progress Bar & Percentage */}
+            {restoreStatus === 'loading' && (
+              <div className="w-full mb-6">
+                <div className="flex items-center justify-between text-xs font-bold mb-2">
+                  <span className="text-slate-400 uppercase tracking-widest text-[10px]">PROGRES RESTORE</span>
+                  <span className="text-emerald-400 text-lg font-black">{restoreProgress}%</span>
+                </div>
+                <div className="w-full h-3.5 bg-white/5 p-0.5 rounded-full border border-white/10 overflow-hidden shadow-inner">
+                  <div
+                    className="bg-gradient-to-r from-emerald-500 via-teal-400 to-green-400 h-full rounded-full transition-all duration-300 ease-out shadow-md shadow-emerald-500/40"
+                    style={{ width: `${restoreProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Summary Details Cards (On Success) */}
+            {restoreStatus === 'success' && restoreSummary && (
+              <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 text-left">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3 border-b border-white/10 pb-2">
+                  Rincian Data Ditambahkan:
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-xs font-medium text-slate-300">
+                  <div className="flex items-center justify-between bg-white/5 px-3 py-2 rounded-xl border border-white/5">
+                    <span>🏢 Cabang:</span>
+                    <span className="font-bold text-white">{restoreSummary.branches}</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-white/5 px-3 py-2 rounded-xl border border-white/5">
+                    <span>🥬 Bahan Baku:</span>
+                    <span className="font-bold text-white">{restoreSummary.ingredients}</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-white/5 px-3 py-2 rounded-xl border border-white/5">
+                    <span>🍔 Produk:</span>
+                    <span className="font-bold text-white">{restoreSummary.products}</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-white/5 px-3 py-2 rounded-xl border border-white/5">
+                    <span>🛍️ Penjualan:</span>
+                    <span className="font-bold text-white">{restoreSummary.sales}</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-white/5 px-3 py-2 rounded-xl border border-white/5">
+                    <span>💸 Pengeluaran:</span>
+                    <span className="font-bold text-white">{restoreSummary.expenses}</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-white/5 px-3 py-2 rounded-xl border border-white/5">
+                    <span>💰 Pemasukan:</span>
+                    <span className="font-bold text-white">{restoreSummary.incomes}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message Details (On Error) */}
+            {restoreStatus === 'error' && (
+              <div className="w-full bg-red-500/10 border border-red-500/20 rounded-2xl p-4 mb-6 text-left max-h-40 overflow-y-auto">
+                <p className="text-xs font-bold text-red-400 mb-1">Detail Error:</p>
+                <p className="text-xs text-red-300 break-words font-mono">{restoreErrorMessage}</p>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            {restoreStatus !== 'loading' && (
+              <button
+                onClick={() => {
+                  setIsRestoring(false);
+                  if (restoreStatus === 'success') {
+                    window.location.reload();
+                  }
+                }}
+                className={`w-full py-4 rounded-2xl font-black uppercase tracking-wider text-xs transition-all shadow-lg ${
+                  restoreStatus === 'success'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-emerald-500/20'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                {restoreStatus === 'success' ? 'Selesai & Muat Ulang Halaman' : 'Tutup'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
