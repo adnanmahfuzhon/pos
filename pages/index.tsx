@@ -477,9 +477,28 @@ export default function Dashboard() {
     reader.readAsText(file);
   };
 
-  const handleClearDatabase = () => {
-    const confirm1 = confirm("⚠️ PERINGATAN: Fitur ini memerlukan endpoint khusus.\n\nUntuk menghapus data, gunakan: npx prisma studio\n\nAtau hapus file prisma/dev.db dan jalankan ulang: npx prisma db push");
-    // Since we don't have a bulk delete endpoint, just show instructions
+  const handleClearDatabase = async () => {
+    const confirm1 = confirm("⚠️ RESET SELURUH TRANSAKSI & PEMBUKUAN?\n\nSemua riwayat transaksi penjualan, pengeluaran, dan pemasukan di database akan DIHAPUS BERSIH.\n\nApakah Anda yakin?");
+    if (!confirm1) return;
+
+    try {
+      const token = localStorage.getItem('pos_token') || 'dev-bypass-token';
+      const res = await fetch('/api/admin/clear', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const result = await res.json();
+      if (res.ok) {
+        alert("✅ " + result.message);
+        window.location.reload();
+      } else {
+        alert("❌ Gagal: " + result.error);
+      }
+    } catch (err: any) {
+      alert("❌ Error: " + err.message);
+    }
   };
 
   return (
