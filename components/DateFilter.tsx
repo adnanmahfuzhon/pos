@@ -97,6 +97,13 @@ export default function DateFilter({ startDate, endDate, onFilterChange, color =
                     const end = new Date(d.getFullYear(), d.getMonth(), 0);
                     return [formatDate(start), formatDate(end)];
                 }
+            },
+            {
+                label: 'Tahun Ini (Semua Data)',
+                getRange: () => {
+                    const year = new Date().getFullYear();
+                    return [`${year}-01-01`, `${year}-12-31`];
+                }
             }
         ];
     };
