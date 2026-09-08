@@ -170,6 +170,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             await processInChunks(incomes, 15, async (item: any) => {
                 const { id, _count, createdAt, updatedAt, branch, ...data } = item;
                 if (effectiveBranchId) data.branchId = effectiveBranchId;
+                if (!data.category) data.category = 'Lain-lain';
 
                 await prisma.income.upsert({
                     where: { id },
